@@ -1,3 +1,4 @@
+use console::style;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use structopt::StructOpt;
@@ -48,7 +49,7 @@ struct Upstream {
 impl Default for Upstream {
     fn default() -> Self {
         Self {
-            server_address: "api.modrinth.com".into()
+            server_address: "api.modrinth.com".into(),
         }
     }
 }
@@ -89,13 +90,41 @@ struct ModResult {
     host: String,
 }
 
+impl ModResult {
+    fn display(&self, index: usize) {
+        let index = style(index).cyan();
+        let title = style(self.title.clone()).bright();
+        let downloads = style(self.downloads.clone()).green();
+        if let Some(latest_release) = self.versions.last() {
+            // TODO fetch version numbers to display
+            let latest_release = style(latest_release).blue();
+            println!(
+                "{} {} [{}] ({} downloads)",
+                index, title, latest_release, downloads
+            );
+        } else {
+            println!("{} {} [no releases]", index, title)
+        }
+        let description = style(self.description.clone()).bright().white();
+        println!("    {}", description);
+    }
+}
+
 async fn cmd_install(config: &Config, package_name: String) -> anyhow::Result<()> {
     let client = reqwest::Client::new();
     let url = format!("https://{}/api/v1/mod", config.upstream.server_address);
     let params = [("query", package_name.as_str())];
     let url = reqwest::Url::parse_with_params(url.as_str(), &params)?;
-    let response = client.get(url).send().await?.json::<SearchResponse>().await?;
-    println!("response: {:#?}", response);
+    let response = client
+        .get(url)
+        .send()
+        .await?
+        .json::<SearchResponse>()
+        .await?;
+    for (i, result) in response.hits.iter().enumerate().rev() {
+        result.display(i + 1);
+    }
+
     Ok(())
 }
 
@@ -103,7 +132,6 @@ async fn cmd_install(config: &Config, package_name: String) -> anyhow::Result<()
 async fn main() -> anyhow::Result<()> {
     let args = Args::from_args();
     let config = args.load_config()?;
-    println!("args: {:#?}\nconfig: {:#?}", args, config);
     match args.command {
         Command::Install { package_name } => cmd_install(&config, package_name).await,
         _ => unimplemented!("unimplemented subcommand"),

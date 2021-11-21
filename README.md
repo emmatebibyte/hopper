@@ -63,16 +63,24 @@ Updates all installed mods of a specific version, or a version set in the config
 ## `hopper add`
 
 ```
-$ hopper add xx
-3> xxxy
-  Description for xxxy
-2> xxyz
-  Description for xxyz
-1> xx
-  Description for xx
+$ hopper add sodium --mc-version 1.17
+4 Indium 1.0.0+mc1.17.1 [1.17.1] (21557 downloads)
+    Sodium addon providing support for the Fabric Rendering API, based on Indigo
+3 Reese's Sodium Options 1.2.1 [1.16.5] (548 downloads)
+    Alternative Options Menu for Sodium
+2 Sodium Extra mc1.17.1-0.3.6 [1.17.1] (16387 downloads)
+    Features that shouldn't be in Sodium.
+1 Sodium mc1.17.1-0.3.2 [1.17.1] (962361 downloads)
+    Modern rendering engine and client-side optimization mod for Minecraft
 :: Select a mod
 :: ...
 ```
+
+- pad mod indices based on largest number
+- option in config to reverse sorting order
+- add parameter to restrict target Minecraft version
+- manually pick out Minecraft version
+- square creeper face progress indicator (from top-left clockwise spiral in)
 
 ## `hopper get`
 
