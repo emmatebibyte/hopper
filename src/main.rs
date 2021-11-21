@@ -59,15 +59,46 @@ struct Config {
     upstream: Upstream,
 }
 
+#[derive(Deserialize, Debug)]
+struct SearchResponse {
+    hits: Vec<ModResult>,
+    offset: isize,
+    limit: isize,
+    total_hits: isize,
+}
+
+#[derive(Deserialize, Debug)]
+struct ModResult {
+    mod_id: String,
+    project_type: Option<String>, // NOTE this isn't in all search results?
+    author: String,
+    title: String,
+    description: String,
+    categories: Vec<String>,
+    versions: Vec<String>,
+    downloads: isize,
+    page_url: String,
+    icon_url: String,
+    author_url: String,
+    date_created: String,
+    date_modified: String,
+    latest_version: String,
+    license: String,
+    client_side: String,
+    server_side: String,
+    host: String,
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let args = Args::from_args();
     let config = args.load_config()?;
     println!("args: {:#?}\nconfig: {:#?}", args, config);
 
-    let url = format!("https://{}/", config.upstream.server_address);
-    let body = reqwest::get(url).await?.text().await?;
-    println!("body: {:#?}", body);
+    let client = reqwest::Client::new();
+    let url = format!("https://{}/api/v1/mod", config.upstream.server_address);
+    let response = client.get(url).send().await?.json::<SearchResponse>().await?;
+    println!("response: {:#?}", response);
 
     Ok(())
 }
