@@ -29,6 +29,12 @@ struct Args {
     command: Command,
 }
 
+impl Args {
+    fn default_paths(&mut self) {
+
+    }
+}
+
 #[derive(Deserialize, Debug)]
 struct Upstream {
     /// Modrinth main server URL
