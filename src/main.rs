@@ -59,9 +59,15 @@ struct Config {
     upstream: Upstream,
 }
 
-fn main() -> Result<(), confy::ConfyError> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     let args = Args::from_args();
     let config = args.load_config()?;
     println!("args: {:#?}\nconfig: {:#?}", args, config);
+
+    let url = format!("https://{}/", config.upstream.server_address);
+    let body = reqwest::get(url).await?.text().await?;
+    println!("body: {:#?}", body);
+
     Ok(())
 }
