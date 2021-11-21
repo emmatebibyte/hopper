@@ -89,16 +89,23 @@ struct ModResult {
     host: String,
 }
 
+async fn cmd_install(config: &Config, package_name: String) -> anyhow::Result<()> {
+    let client = reqwest::Client::new();
+    let url = format!("https://{}/api/v1/mod", config.upstream.server_address);
+    let params = [("query", package_name.as_str())];
+    let url = reqwest::Url::parse_with_params(url.as_str(), &params)?;
+    let response = client.get(url).send().await?.json::<SearchResponse>().await?;
+    println!("response: {:#?}", response);
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let args = Args::from_args();
     let config = args.load_config()?;
     println!("args: {:#?}\nconfig: {:#?}", args, config);
-
-    let client = reqwest::Client::new();
-    let url = format!("https://{}/api/v1/mod", config.upstream.server_address);
-    let response = client.get(url).send().await?.json::<SearchResponse>().await?;
-    println!("response: {:#?}", response);
-
-    Ok(())
+    match args.command {
+        Command::Install { package_name } => cmd_install(&config, package_name).await,
+        _ => unimplemented!("unimplemented subcommand"),
+    }
 }
