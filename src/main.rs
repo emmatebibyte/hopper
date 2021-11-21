@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -30,24 +30,38 @@ struct Args {
 }
 
 impl Args {
-    fn default_paths(&mut self) {
-
+    fn load_config(&self) -> Result<Config, confy::ConfyError> {
+        if let Some(config_path) = &self.config {
+            confy::load_path(config_path)
+        } else {
+            confy::load("hopper")
+        }
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 struct Upstream {
-    /// Modrinth main server URL
-    server_url: String, // TODO use URL?
+    /// Modrinth main server address
+    server_address: String,
 }
 
-#[derive(Deserialize, Debug)]
+impl Default for Upstream {
+    fn default() -> Self {
+        Self {
+            server_address: "api.modrinth.com".into()
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug, Default)]
 struct Config {
     /// Configuration for the upstream Modrinth server
     upstream: Upstream,
 }
 
-fn main() {
+fn main() -> Result<(), confy::ConfyError> {
     let args = Args::from_args();
-    println!("{:#?}", args);
+    let config = args.load_config()?;
+    println!("args: {:#?}\nconfig: {:#?}", args, config);
+    Ok(())
 }
