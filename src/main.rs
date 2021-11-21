@@ -91,22 +91,27 @@ struct ModResult {
 }
 
 impl ModResult {
-    fn display(&self, index: usize) {
-        let index = style(index).cyan();
-        let title = style(self.title.clone()).bright();
-        let downloads = style(self.downloads.clone()).green();
+    fn format_info(&self) -> String {
+        let title = style(self.title.clone()).bold();
+        let downloads = style(self.downloads.clone()).bold().green();
         if let Some(latest_release) = self.versions.last() {
             // TODO fetch version numbers to display
-            let latest_release = style(latest_release).blue();
-            println!(
-                "{} {} [{}] ({} downloads)",
-                index, title, latest_release, downloads
-            );
+            let latest_release = style(latest_release).bold().blue();
+            format!("{} [{}] ({} downloads)", title, latest_release, downloads)
         } else {
-            println!("{} {} [no releases]", index, title)
+            format!("{} [no releases]", title)
         }
-        let description = style(self.description.clone()).bright().white();
-        println!("    {}", description);
+    }
+
+    fn format_description(&self) -> String {
+        self.description.to_owned()
+    }
+
+    fn display(&self, index: usize) {
+        let index = style(index).magenta();
+        let info = self.format_info();
+        let description = self.format_description();
+        println!("{} {}\n    {}", index, info, description);
     }
 }
 
