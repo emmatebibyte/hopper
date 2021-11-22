@@ -120,10 +120,10 @@ impl ModResult {
     }
 }
 
-async fn cmd_get(config: &Config, package_name: String) -> anyhow::Result<()> {
+async fn search_mods(config: &Config, query: String) -> anyhow::Result<SearchResponse> {
     let client = reqwest::Client::new();
     let url = format!("https://{}/api/v1/mod", config.upstream.server_address);
-    let params = [("query", package_name.as_str())];
+    let params = [("query", query.as_str())];
     let url = reqwest::Url::parse_with_params(url.as_str(), &params)?;
     let response = client
         .get(url)
@@ -131,10 +131,19 @@ async fn cmd_get(config: &Config, package_name: String) -> anyhow::Result<()> {
         .await?
         .json::<SearchResponse>()
         .await?;
+    Ok(response)
+}
+
+// TODO config flag to reverse search results order
+fn display_search_results(_config: &Config, response: &SearchResponse) {
     for (i, result) in response.hits.iter().enumerate().rev() {
         result.display(i + 1);
     }
+}
 
+async fn cmd_get(config: &Config, package_name: String) -> anyhow::Result<()> {
+    let response = search_mods(config, package_name).await?;
+    display_search_results(config, &response);
     Ok(())
 }
 
