@@ -59,8 +59,25 @@ impl Default for Upstream {
     }
 }
 
+#[derive(Deserialize, Serialize, Debug)]
+struct Options {
+    /// Whether to reverse search results
+    reverse_search: bool,
+}
+
+impl Default for Options {
+    fn default() -> Self {
+        Self {
+            reverse_search: true,
+        }
+    }
+}
+
 #[derive(Deserialize, Serialize, Debug, Default)]
 struct Config {
+    /// General settings
+    options: Options,
+
     /// Configuration for the upstream Modrinth server
     upstream: Upstream,
 }
@@ -135,9 +152,16 @@ async fn search_mods(config: &Config, query: String) -> anyhow::Result<SearchRes
 }
 
 // TODO config flag to reverse search results order
-fn display_search_results(_config: &Config, response: &SearchResponse) {
-    for (i, result) in response.hits.iter().enumerate().rev() {
-        result.display(i + 1);
+fn display_search_results(config: &Config, response: &SearchResponse) {
+    let iter = response.hits.iter().enumerate();
+    if config.options.reverse_search {
+        for (i, result) in iter.rev() {
+            result.display(i + 1);
+        }
+    } else {
+        for (i, result) in iter {
+            result.display(i + 1);
+        }
     }
 }
 
