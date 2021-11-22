@@ -2,6 +2,7 @@ use console::style;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use structopt::StructOpt;
+use substring::Substring;
 
 // TODO use ColoredHelp by default?
 #[derive(StructOpt, Debug)]
@@ -92,7 +93,7 @@ struct SearchResponse {
 
 #[derive(Deserialize, Debug)]
 struct ModResult {
-    mod_id: String,
+    mod_id: String,               // TODO parse to `local-xxxxx` with regex
     project_type: Option<String>, // NOTE this isn't in all search results?
     author: String,
     title: String,
@@ -110,6 +111,33 @@ struct ModResult {
     client_side: String,
     server_side: String,
     host: String,
+}
+
+#[derive(Deserialize, Debug)]
+struct ModInfo {
+    id: String, // TODO serialize mod id?
+    slug: String,
+    team: String, // TODO serialize team id?
+    title: String,
+    description: String,
+    body: String,
+    published: String, // TODO serialize datetime
+    updated: String,   // TODO serialize datetime
+    status: String,
+    // TODO License object
+    // license: String,
+    client_side: String, // TODO serialize as enum
+    server_side: String, // TODO serialize as enum
+    downloads: isize,
+    followers: isize,
+    categories: Vec<String>,
+    versions: Vec<String>,
+    icon_url: Option<String>,
+    issues_url: Option<String>,
+    source_url: Option<String>,
+    wiki_url: Option<String>,
+    discord_url: Option<String>,
+    donation_urls: Vec<String>,
 }
 
 impl ModResult {
@@ -165,9 +193,54 @@ fn display_search_results(config: &Config, response: &SearchResponse) {
     }
 }
 
+// TODO implement enum for more graceful exiting
+async fn select_from_results<'a>(
+    _config: &Config,
+    response: &'a SearchResponse,
+) -> Vec<&'a ModResult> {
+    // TODO actually select with a dialogue
+    match response.hits.first() {
+        Some(first) => vec![first],
+        None => Vec::new(),
+    }
+}
+
+async fn fetch_mod_info(config: &Config, mod_result: &ModResult) -> anyhow::Result<ModInfo> {
+    let client = reqwest::Client::new();
+    let mod_id = &mod_result.mod_id;
+    let mod_id = mod_id.substring(6, mod_id.len()); // Remove "local-" prefix
+    let url = format!(
+        "https://{}/api/v1/mod/{}",
+        config.upstream.server_address, mod_id
+    );
+    let response = client.get(url).send().await?;
+    let response = response.json::<ModInfo>().await?;
+    Ok(response)
+}
+
 async fn cmd_get(config: &Config, package_name: String) -> anyhow::Result<()> {
     let response = search_mods(config, package_name).await?;
+
+    if response.hits.is_empty() {
+        // TODO formatting
+        println!("No results; nothing to do...");
+        return Ok(());
+    }
+
     display_search_results(config, &response);
+    let selected = select_from_results(config, &response).await;
+
+    if selected.is_empty() {
+        // TODO formatting
+        println!("No packages selected; nothing to do...");
+        return Ok(());
+    }
+
+    for to_get in selected.iter() {
+        let mod_info = fetch_mod_info(config, to_get).await?;
+        println!("mod: {:#?}", mod_info);
+    }
+
     Ok(())
 }
 
