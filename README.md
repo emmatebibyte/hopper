@@ -2,12 +2,19 @@
 
 - modrinth mod searching
 - modrinth mod installation
+- curseforge api too?
 - per-instance mod management
 - mod updating
+- fish autocomplete
+- bash autocomplete
+- zsh autocomplete
+- nushell autocomplete
+- manpage
 
-If modrinth supports it:
+Long-term/host-dependent:
 - conflict resolution
 - dependency resolution
+- shaderpack and resource pack management
 
 # File Architecture
 
@@ -76,12 +83,13 @@ $ hopper add sodium --mc-version 1.17
 :: ...
 ```
 
+- configurable mod search results like [Starship](https://starship.rs)
 - pad mod indices based on largest number
 - option in config to reverse sorting order
 - add parameter to restrict target Minecraft version
 - manually pick out Minecraft version
-- square creeper face progress indicator (from top-left clockwise spiral in)
+- square colored creeper face progress indicator (from top-left clockwise spiral in)
 
 ## `hopper get`
 
-Just like `hopper add` but simply downloads a mod jar.
+Just like `hopper add` but simply downloads a mod jar to the current directory.

@@ -3,12 +3,17 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use structopt::StructOpt;
 
+// TODO use ColoredHelp by default?
 #[derive(StructOpt, Debug)]
 enum Command {
+    /// Adds a mod to the current instance
     #[structopt(setting = structopt::clap::AppSettings::ColoredHelp)]
-    Install { package_name: String },
+    Add { package_name: String },
+    /// Removes a mod
     #[structopt(setting = structopt::clap::AppSettings::ColoredHelp)]
     Remove { package_name: String },
+    #[structopt(setting = structopt::clap::AppSettings::ColoredHelp)]
+    Get { package_name: String },
     #[structopt(setting = structopt::clap::AppSettings::ColoredHelp)]
     Update,
     #[structopt(setting = structopt::clap::AppSettings::ColoredHelp)]
@@ -115,7 +120,7 @@ impl ModResult {
     }
 }
 
-async fn cmd_install(config: &Config, package_name: String) -> anyhow::Result<()> {
+async fn cmd_get(config: &Config, package_name: String) -> anyhow::Result<()> {
     let client = reqwest::Client::new();
     let url = format!("https://{}/api/v1/mod", config.upstream.server_address);
     let params = [("query", package_name.as_str())];
@@ -138,7 +143,7 @@ async fn main() -> anyhow::Result<()> {
     let args = Args::from_args();
     let config = args.load_config()?;
     match args.command {
-        Command::Install { package_name } => cmd_install(&config, package_name).await,
+        Command::Get { package_name } => cmd_get(&config, package_name).await,
         _ => unimplemented!("unimplemented subcommand"),
     }
 }
