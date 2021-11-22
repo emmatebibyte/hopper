@@ -2,7 +2,6 @@ use console::style;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use structopt::StructOpt;
-use substring::Substring;
 
 // TODO use ColoredHelp by default?
 #[derive(StructOpt, Debug)]
@@ -208,7 +207,7 @@ async fn select_from_results<'a>(
 async fn fetch_mod_info(config: &Config, mod_result: &ModResult) -> anyhow::Result<ModInfo> {
     let client = reqwest::Client::new();
     let mod_id = &mod_result.mod_id;
-    let mod_id = mod_id.substring(6, mod_id.len()); // Remove "local-" prefix
+    let mod_id = mod_id[6..].to_owned(); // Remove "local-" prefix
     let url = format!(
         "https://{}/api/v1/mod/{}",
         config.upstream.server_address, mod_id
