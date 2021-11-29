@@ -1,8 +1,10 @@
-<noscript><a href="https://liberapay.com/tebibytemedia/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a></noscript>
-
 # Hopper
 
-A Minecraft mod manager for the terminal
+A Minecraft mod manager for the terminal.
+
+### Donate
+
+<noscript><a href="https://liberapay.com/tebibytemedia/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a></noscript>
 
 # High-level Goals
 
