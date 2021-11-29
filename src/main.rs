@@ -224,12 +224,32 @@ fn display_search_results(config: &Config, response: &SearchResponse) {
 async fn select_from_results<'a>(
     _config: &Config,
     response: &'a SearchResponse,
-) -> Vec<&'a ModResult> {
-    // TODO actually select with a dialogue
-    match response.hits.first() {
-        Some(first) => vec![first],
-        None => Vec::new(),
+) -> anyhow::Result<Vec<&'a ModResult>> {
+    let input: String = dialoguer::Input::new()
+        .with_prompt("Mods to install (eg: 1 2 3)")
+        .interact_text()?;
+
+    let mut selected: Vec<usize> = Vec::new();
+    for token in input.split(" ") {
+        // TODO range input (eg: 1-3)
+        let index: usize = token.parse().expect("Token must be an integer");
+        if index < 1 || index > response.hits.len() {
+            // TODO return useful error instead of panicking
+            panic!("Index {} is out of bounds", index);
+        }
+
+        // input is indexed from 1, but results are indexed from 0
+        let index = index - 1;
+
+        if !selected.contains(&index) {
+            selected.push(index);
+        } else {
+            // TODO make this a proper warning log message
+            println!("warning: repeated index {}", index);
+        }
     }
+
+    Ok(selected.iter().map(|i| &response.hits[*i]).collect())
 }
 
 async fn fetch_mod_info(config: &Config, mod_result: &ModResult) -> anyhow::Result<ModInfo> {
@@ -282,7 +302,7 @@ async fn cmd_get(config: &Config, package_name: String) -> anyhow::Result<()> {
     }
 
     display_search_results(config, &response);
-    let selected = select_from_results(config, &response).await;
+    let selected = select_from_results(config, &response).await?;
 
     if selected.is_empty() {
         // TODO formatting
