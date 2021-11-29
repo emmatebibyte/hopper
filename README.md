@@ -15,6 +15,10 @@ Long-term/host-dependent:
 - conflict resolution
 - dependency resolution
 - shaderpack and resource pack management
+- integrate into multimc or theseus
+- graphical frontend (w/ notifications?)
+
+[Modrinth REST API docs](https://github.com/modrinth/labrinth/wiki/API-Documentation)
 
 # File Architecture
 
