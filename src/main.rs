@@ -256,6 +256,22 @@ async fn fetch_mod_version(config: &Config, version_id: &String) -> anyhow::Resu
     Ok(response)
 }
 
+async fn download_version_file(_config: &Config, file: &ModVersionFile) -> anyhow::Result<()> {
+    let client = reqwest::Client::new();
+    let response = client.get(&file.url).send().await?;
+
+    // TODO stream from socket to cache with response.bytes_stream()
+    // TODO check hashes while streaming
+    let filename = &file.filename;
+    println!("downloading to {}...", filename);
+    let mut file = std::fs::File::create(&file.filename)?;
+    let mut content = std::io::Cursor::new(response.bytes().await?);
+    std::io::copy(&mut content, &mut file)?;
+    println!("done downloading.");
+
+    Ok(())
+}
+
 async fn cmd_get(config: &Config, package_name: String) -> anyhow::Result<()> {
     let response = search_mods(config, package_name).await?;
 
@@ -284,6 +300,10 @@ async fn cmd_get(config: &Config, package_name: String) -> anyhow::Result<()> {
 
             let version = fetch_mod_version(config, version_id).await?;
             println!("version: {:#?}", version);
+
+            for file in version.files.iter() {
+                download_version_file(config, file).await?;
+            }
         }
     }
 
