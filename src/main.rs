@@ -1,5 +1,6 @@
 use console::style;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -112,6 +113,31 @@ struct ModResult {
     host: String,
 }
 
+impl ModResult {
+    fn format_info(&self) -> String {
+        let title = style(self.title.clone()).bold();
+        let downloads = style(self.downloads.clone()).bold().green();
+        if let Some(latest_release) = self.versions.last() {
+            // TODO fetch version numbers to display
+            let latest_release = style(latest_release).bold().blue();
+            format!("{} [{}] ({} downloads)", title, latest_release, downloads)
+        } else {
+            format!("{} [no releases]", title)
+        }
+    }
+
+    fn format_description(&self) -> String {
+        self.description.to_owned()
+    }
+
+    fn display(&self, index: usize) {
+        let index = style(index).magenta();
+        let info = self.format_info();
+        let description = self.format_description();
+        println!("{} {}\n    {}", index, info, description);
+    }
+}
+
 #[derive(Deserialize, Debug)]
 struct ModInfo {
     id: String, // TODO serialize mod id?
@@ -139,29 +165,31 @@ struct ModInfo {
     donation_urls: Vec<String>,
 }
 
-impl ModResult {
-    fn format_info(&self) -> String {
-        let title = style(self.title.clone()).bold();
-        let downloads = style(self.downloads.clone()).bold().green();
-        if let Some(latest_release) = self.versions.last() {
-            // TODO fetch version numbers to display
-            let latest_release = style(latest_release).bold().blue();
-            format!("{} [{}] ({} downloads)", title, latest_release, downloads)
-        } else {
-            format!("{} [no releases]", title)
-        }
-    }
+#[derive(Deserialize, Debug)]
+struct ModVersion {
+    id: String,        // version id
+    mod_id: String,    // mod id
+    author_id: String, // user id
+    // NOTE modrinth docs list this as a String, but is actually a bool?
+    // featured: String,  // user id
+    name: String,
+    version_number: String,
+    changelog: Option<String>,
+    changelog_url: Option<String>,
+    date_published: String, // TODO serialize datetime
+    downloads: isize,
+    version_type: String, // TODO {alpha | beta | release}
+    files: Vec<ModVersionFile>,
+    dependencies: Vec<String>, // TODO dependency wrangling, thank you modrinth, very cool
+    game_versions: Vec<String>,
+    loaders: Vec<String>,
+}
 
-    fn format_description(&self) -> String {
-        self.description.to_owned()
-    }
-
-    fn display(&self, index: usize) {
-        let index = style(index).magenta();
-        let info = self.format_info();
-        let description = self.format_description();
-        println!("{} {}\n    {}", index, info, description);
-    }
+#[derive(Deserialize, Debug)]
+struct ModVersionFile {
+    hashes: HashMap<String, String>,
+    url: String,
+    filename: String,
 }
 
 async fn search_mods(config: &Config, query: String) -> anyhow::Result<SearchResponse> {
@@ -217,6 +245,17 @@ async fn fetch_mod_info(config: &Config, mod_result: &ModResult) -> anyhow::Resu
     Ok(response)
 }
 
+async fn fetch_mod_version(config: &Config, version_id: &String) -> anyhow::Result<ModVersion> {
+    let client = reqwest::Client::new();
+    let url = format!(
+        "https://{}/api/v1/version/{}",
+        config.upstream.server_address, version_id
+    );
+    let response = client.get(url).send().await?;
+    let response = response.json::<ModVersion>().await?;
+    Ok(response)
+}
+
 async fn cmd_get(config: &Config, package_name: String) -> anyhow::Result<()> {
     let response = search_mods(config, package_name).await?;
 
@@ -238,6 +277,14 @@ async fn cmd_get(config: &Config, package_name: String) -> anyhow::Result<()> {
     for to_get in selected.iter() {
         let mod_info = fetch_mod_info(config, to_get).await?;
         println!("mod: {:#?}", mod_info);
+
+        // TODO allow the user to select multiple versions
+        if let Some(version_id) = mod_info.versions.first() {
+            println!("fetching version {}", version_id);
+
+            let version = fetch_mod_version(config, version_id).await?;
+            println!("version: {:#?}", version);
+        }
     }
 
     Ok(())
