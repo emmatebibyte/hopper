@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 
 // TODO use ColoredHelp by default?
-#[derive(StructOpt, Debug)]
+#[derive(StructOpt, Clone, Debug)]
 enum Command {
     /// Adds a mod to the current instance
     #[structopt(setting = structopt::clap::AppSettings::ColoredHelp)]
@@ -24,7 +24,7 @@ enum Command {
     Clean,
 }
 
-#[derive(StructOpt, Debug)]
+#[derive(StructOpt, Clone, Debug)]
 #[structopt(name = "hopper", setting = structopt::clap::AppSettings::ColoredHelp)]
 struct Args {
     /// Path to configuration file
@@ -34,6 +34,10 @@ struct Args {
     /// Path to mod lockfile
     #[structopt(short, long, parse(from_os_str))]
     lockfile: Option<PathBuf>,
+
+    /// Auto-accept confirmation dialogues
+    #[structopt(short = "y", long = "yes")]
+    auto_accept: bool,
 
     #[structopt(subcommand)]
     command: Command,
@@ -84,6 +88,11 @@ struct Config {
 
     /// Configuration for the upstream Modrinth server
     upstream: Upstream,
+}
+
+struct AppContext {
+    pub args: Args,
+    pub config: Config,
 }
 
 #[derive(Deserialize, Debug)]
@@ -195,9 +204,9 @@ struct ModVersionFile {
     filename: String,
 }
 
-async fn search_mods(config: &Config, query: String) -> anyhow::Result<SearchResponse> {
+async fn search_mods(ctx: &AppContext, query: String) -> anyhow::Result<SearchResponse> {
     let client = reqwest::Client::new();
-    let url = format!("https://{}/api/v1/mod", config.upstream.server_address);
+    let url = format!("https://{}/api/v1/mod", ctx.config.upstream.server_address);
     let params = [("query", query.as_str())];
     let url = reqwest::Url::parse_with_params(url.as_str(), &params)?;
     let response = client
@@ -210,9 +219,9 @@ async fn search_mods(config: &Config, query: String) -> anyhow::Result<SearchRes
 }
 
 // TODO config flag to reverse search results order
-fn display_search_results(config: &Config, response: &SearchResponse) {
+fn display_search_results(ctx: &AppContext, response: &SearchResponse) {
     let iter = response.hits.iter().enumerate();
-    if config.options.reverse_search {
+    if ctx.config.options.reverse_search {
         for (i, result) in iter.rev() {
             result.display(i + 1);
         }
@@ -225,7 +234,7 @@ fn display_search_results(config: &Config, response: &SearchResponse) {
 
 // TODO implement enum for more graceful exiting
 async fn select_from_results<'a>(
-    _config: &Config,
+    _ctx: &AppContext,
     response: &'a SearchResponse,
 ) -> anyhow::Result<Vec<&'a ModResult>> {
     let input: String = dialoguer::Input::new()
@@ -255,44 +264,46 @@ async fn select_from_results<'a>(
     Ok(selected.iter().map(|i| &response.hits[*i]).collect())
 }
 
-async fn fetch_mod_info(config: &Config, mod_result: &ModResult) -> anyhow::Result<ModInfo> {
+async fn fetch_mod_info(ctx: &AppContext, mod_result: &ModResult) -> anyhow::Result<ModInfo> {
     let client = reqwest::Client::new();
     let mod_id = &mod_result.mod_id;
     let mod_id = mod_id[6..].to_owned(); // Remove "local-" prefix
     let url = format!(
         "https://{}/api/v1/mod/{}",
-        config.upstream.server_address, mod_id
+        ctx.config.upstream.server_address, mod_id
     );
     let response = client.get(url).send().await?;
     let response = response.json::<ModInfo>().await?;
     Ok(response)
 }
 
-async fn fetch_mod_version(config: &Config, version_id: &String) -> anyhow::Result<ModVersion> {
+async fn fetch_mod_version(ctx: &AppContext, version_id: &String) -> anyhow::Result<ModVersion> {
     let client = reqwest::Client::new();
     let url = format!(
         "https://{}/api/v1/version/{}",
-        config.upstream.server_address, version_id
+        ctx.config.upstream.server_address, version_id
     );
     let response = client.get(url).send().await?;
     let response = response.json::<ModVersion>().await?;
     Ok(response)
 }
 
-async fn download_version_file(_config: &Config, file: &ModVersionFile) -> anyhow::Result<()> {
+async fn download_version_file(ctx: &AppContext, file: &ModVersionFile) -> anyhow::Result<()> {
     // TODO replace all uses of .unwrap() with proper error codes
     let filename = &file.filename;
 
     // TODO make confirmation skippable with flag argument
-    use dialoguer::Confirm;
-    let prompt = format!("Download to {}?", filename);
-    let confirm = Confirm::new()
-        .with_prompt(prompt)
-        .default(true)
-        .interact()?;
-    if !confirm {
-        println!("Skipping downloading {}...", filename);
-        return Ok(());
+    if !ctx.args.auto_accept {
+        use dialoguer::Confirm;
+        let prompt = format!("Download to {}?", filename);
+        let confirm = Confirm::new()
+            .with_prompt(prompt)
+            .default(true)
+            .interact()?;
+        if !confirm {
+            println!("Skipping downloading {}...", filename);
+            return Ok(());
+        }
     }
 
     // TODO check hashes while streaming
@@ -332,8 +343,8 @@ async fn download_version_file(_config: &Config, file: &ModVersionFile) -> anyho
     Ok(())
 }
 
-async fn cmd_get(config: &Config, package_name: String) -> anyhow::Result<()> {
-    let response = search_mods(config, package_name).await?;
+async fn cmd_get(ctx: &AppContext, package_name: String) -> anyhow::Result<()> {
+    let response = search_mods(ctx, package_name).await?;
 
     if response.hits.is_empty() {
         // TODO formatting
@@ -341,8 +352,8 @@ async fn cmd_get(config: &Config, package_name: String) -> anyhow::Result<()> {
         return Ok(());
     }
 
-    display_search_results(config, &response);
-    let selected = select_from_results(config, &response).await?;
+    display_search_results(ctx, &response);
+    let selected = select_from_results(ctx, &response).await?;
 
     if selected.is_empty() {
         // TODO formatting
@@ -351,18 +362,18 @@ async fn cmd_get(config: &Config, package_name: String) -> anyhow::Result<()> {
     }
 
     for to_get in selected.iter() {
-        let mod_info = fetch_mod_info(config, to_get).await?;
+        let mod_info = fetch_mod_info(ctx, to_get).await?;
         println!("mod: {:#?}", mod_info);
 
         // TODO allow the user to select multiple versions
         if let Some(version_id) = mod_info.versions.first() {
             println!("fetching version {}", version_id);
 
-            let version = fetch_mod_version(config, version_id).await?;
+            let version = fetch_mod_version(ctx, version_id).await?;
             println!("version: {:#?}", version);
 
             for file in version.files.iter() {
-                download_version_file(config, file).await?;
+                download_version_file(ctx, file).await?;
             }
         }
     }
@@ -374,8 +385,9 @@ async fn cmd_get(config: &Config, package_name: String) -> anyhow::Result<()> {
 async fn main() -> anyhow::Result<()> {
     let args = Args::from_args();
     let config = args.load_config()?;
-    match args.command {
-        Command::Get { package_name } => cmd_get(&config, package_name).await,
+    let ctx = AppContext { args, config };
+    match ctx.args.to_owned().command {
+        Command::Get { package_name } => cmd_get(&ctx, package_name).await,
         _ => unimplemented!("unimplemented subcommand"),
     }
 }
