@@ -1,6 +1,9 @@
 use console::style;
+use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
+use std::cmp::min;
 use std::collections::HashMap;
+use std::io::Write;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -277,10 +280,10 @@ async fn fetch_mod_version(config: &Config, version_id: &String) -> anyhow::Resu
 }
 
 async fn download_version_file(_config: &Config, file: &ModVersionFile) -> anyhow::Result<()> {
-    let client = reqwest::Client::new();
-    let response = client.get(&file.url).send().await?;
+    // TODO replace all uses of .unwrap() with proper error codes
     let filename = &file.filename;
 
+    // TODO make confirmation skippable with flag argument
     use dialoguer::Confirm;
     let prompt = format!("Download to {}?", filename);
     let confirm = Confirm::new()
@@ -292,13 +295,39 @@ async fn download_version_file(_config: &Config, file: &ModVersionFile) -> anyho
         return Ok(());
     }
 
-    // TODO stream from socket to cache with response.bytes_stream()
     // TODO check hashes while streaming
 
-    let mut file = std::fs::File::create(&file.filename)?;
-    let mut content = std::io::Cursor::new(response.bytes().await?);
-    std::io::copy(&mut content, &mut file)?;
-    println!("done downloading.");
+    let client = reqwest::Client::new();
+    let url = &file.url;
+    let response = client.get(url).send().await?;
+    let total_size = response.content_length().unwrap();
+
+    use indicatif::{ProgressBar, ProgressStyle};
+    let pb = ProgressBar::new(total_size);
+    pb.set_style(ProgressStyle::default_bar().template("{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})").progress_chars("#>-"));
+
+    // TODO find a way to into -> impl Into<Cow<'static, str>>
+    // let message = format!("Downloading {}", url);
+    let message = "Downloading file";
+    pb.set_message(message);
+
+    let filename = &file.filename;
+    let mut file = std::fs::File::create(filename)?;
+    let mut downloaded: u64 = 0;
+    let mut stream = response.bytes_stream();
+
+    while let Some(item) = stream.next().await {
+        let chunk = &item.unwrap();
+        file.write(&chunk)?;
+        let new = min(downloaded + (chunk.len() as u64), total_size);
+        downloaded = new;
+        pb.set_position(new);
+    }
+
+    // TODO find a way to into -> impl Into<Cow<'static, str>>
+    // let message = format!("Downloaded {} to {}", url, filename);
+    let message = "Download complete";
+    pb.finish_with_message(message);
 
     Ok(())
 }
