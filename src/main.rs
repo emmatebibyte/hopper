@@ -8,6 +8,7 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 
 // TODO use ColoredHelp by default?
+// TODO move each enum value to a dedicated struct
 #[derive(StructOpt, Clone, Debug)]
 enum Command {
     /// Adds a mod to the current instance
@@ -24,6 +25,7 @@ enum Command {
     Clean,
 }
 
+// TODO move main body argument fields to substruct for ease of moving?
 #[derive(StructOpt, Clone, Debug)]
 #[structopt(name = "hopper", setting = structopt::clap::AppSettings::ColoredHelp)]
 struct Args {
@@ -306,27 +308,23 @@ async fn download_version_file(ctx: &AppContext, file: &ModVersionFile) -> anyho
         }
     }
 
-    // TODO check hashes while streaming
-
     let client = reqwest::Client::new();
     let url = &file.url;
     let response = client.get(url).send().await?;
     let total_size = response.content_length().unwrap();
 
+    // TODO better colors and styling!
     use indicatif::{ProgressBar, ProgressStyle};
     let pb = ProgressBar::new(total_size);
     pb.set_style(ProgressStyle::default_bar().template("{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})").progress_chars("#>-"));
-
-    // TODO find a way to into -> impl Into<Cow<'static, str>>
-    // let message = format!("Downloading {}", url);
-    let message = "Downloading file";
-    pb.set_message(message);
+    pb.set_message(&format!("Downloading {}", url));
 
     let filename = &file.filename;
     let mut file = std::fs::File::create(filename)?;
     let mut downloaded: u64 = 0;
     let mut stream = response.bytes_stream();
 
+    // TODO check hashes while streaming
     while let Some(item) = stream.next().await {
         let chunk = &item.unwrap();
         file.write(&chunk)?;
@@ -335,11 +333,7 @@ async fn download_version_file(ctx: &AppContext, file: &ModVersionFile) -> anyho
         pb.set_position(new);
     }
 
-    // TODO find a way to into -> impl Into<Cow<'static, str>>
-    // let message = format!("Downloaded {} to {}", url, filename);
-    let message = "Download complete";
-    pb.finish_with_message(message);
-
+    pb.finish_with_message(&format!("Downloaded {} to {}", url, filename));
     Ok(())
 }
 
@@ -363,15 +357,12 @@ async fn cmd_get(ctx: &AppContext, package_name: String) -> anyhow::Result<()> {
 
     for to_get in selected.iter() {
         let mod_info = fetch_mod_info(ctx, to_get).await?;
-        println!("mod: {:#?}", mod_info);
 
         // TODO allow the user to select multiple versions
         if let Some(version_id) = mod_info.versions.first() {
             println!("fetching version {}", version_id);
 
             let version = fetch_mod_version(ctx, version_id).await?;
-            println!("version: {:#?}", version);
-
             for file in version.files.iter() {
                 download_version_file(ctx, file).await?;
             }
