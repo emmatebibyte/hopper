@@ -279,11 +279,22 @@ async fn fetch_mod_version(config: &Config, version_id: &String) -> anyhow::Resu
 async fn download_version_file(_config: &Config, file: &ModVersionFile) -> anyhow::Result<()> {
     let client = reqwest::Client::new();
     let response = client.get(&file.url).send().await?;
+    let filename = &file.filename;
+
+    use dialoguer::Confirm;
+    let prompt = format!("Download to {}?", filename);
+    let confirm = Confirm::new()
+        .with_prompt(prompt)
+        .default(true)
+        .interact()?;
+    if !confirm {
+        println!("Skipping downloading {}...", filename);
+        return Ok(());
+    }
 
     // TODO stream from socket to cache with response.bytes_stream()
     // TODO check hashes while streaming
-    let filename = &file.filename;
-    println!("downloading to {}...", filename);
+
     let mut file = std::fs::File::create(&file.filename)?;
     let mut content = std::io::Cursor::new(response.bytes().await?);
     std::io::copy(&mut content, &mut file)?;
