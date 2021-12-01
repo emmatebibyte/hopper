@@ -220,7 +220,6 @@ async fn search_mods(ctx: &AppContext, query: String) -> anyhow::Result<SearchRe
     Ok(response)
 }
 
-// TODO config flag to reverse search results order
 fn display_search_results(ctx: &AppContext, response: &SearchResponse) {
     let iter = response.hits.iter().enumerate();
     if ctx.config.options.reverse_search {
