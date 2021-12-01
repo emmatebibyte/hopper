@@ -168,8 +168,7 @@ struct ModInfo {
     published: String, // TODO serialize datetime
     updated: String,   // TODO serialize datetime
     status: String,
-    // TODO License object
-    // license: String,
+    license: License,
     client_side: String, // TODO serialize as enum
     server_side: String, // TODO serialize as enum
     downloads: isize,
@@ -182,6 +181,13 @@ struct ModInfo {
     wiki_url: Option<String>,
     discord_url: Option<String>,
     donation_urls: Vec<String>,
+}
+
+#[derive(Deserialize, Debug)]
+struct License {
+    id: String,
+    name: String,
+    url: String,
 }
 
 #[derive(Deserialize, Debug)]
