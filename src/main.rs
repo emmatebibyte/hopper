@@ -7,18 +7,23 @@ use std::io::Write;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
+// TODO parameter to restrict target Minecraft version
+#[derive(StructOpt, Clone, Debug)]
+struct SearchArgs {
+    package_name: String,
+}
+
 // TODO use ColoredHelp by default?
-// TODO move each enum value to a dedicated struct
 #[derive(StructOpt, Clone, Debug)]
 enum Command {
     /// Adds a mod to the current instance
     #[structopt(setting = structopt::clap::AppSettings::ColoredHelp)]
-    Add { package_name: String },
+    Add(SearchArgs),
     /// Removes a mod
     #[structopt(setting = structopt::clap::AppSettings::ColoredHelp)]
     Remove { package_name: String },
     #[structopt(setting = structopt::clap::AppSettings::ColoredHelp)]
-    Get { package_name: String },
+    Get(SearchArgs),
     #[structopt(setting = structopt::clap::AppSettings::ColoredHelp)]
     Update,
     #[structopt(setting = structopt::clap::AppSettings::ColoredHelp)]
@@ -206,10 +211,10 @@ struct ModVersionFile {
     filename: String,
 }
 
-async fn search_mods(ctx: &AppContext, query: String) -> anyhow::Result<SearchResponse> {
+async fn search_mods(ctx: &AppContext, search_args: &SearchArgs) -> anyhow::Result<SearchResponse> {
     let client = reqwest::Client::new();
     let url = format!("https://{}/api/v1/mod", ctx.config.upstream.server_address);
-    let params = [("query", query.as_str())];
+    let params = [("query", search_args.package_name.as_str())];
     let url = reqwest::Url::parse_with_params(url.as_str(), &params)?;
     let response = client
         .get(url)
@@ -220,6 +225,7 @@ async fn search_mods(ctx: &AppContext, query: String) -> anyhow::Result<SearchRe
     Ok(response)
 }
 
+// TODO pad mod indices based on largest number
 fn display_search_results(ctx: &AppContext, response: &SearchResponse) {
     let iter = response.hits.iter().enumerate();
     if ctx.config.options.reverse_search {
@@ -313,6 +319,7 @@ async fn download_version_file(ctx: &AppContext, file: &ModVersionFile) -> anyho
     let total_size = response.content_length().unwrap();
 
     // TODO better colors and styling!
+    // TODO square colored creeper face progress indicator (from top-left clockwise spiral in)
     use indicatif::{ProgressBar, ProgressStyle};
     let pb = ProgressBar::new(total_size);
     pb.set_style(ProgressStyle::default_bar().template("{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})").progress_chars("#>-"));
@@ -336,8 +343,8 @@ async fn download_version_file(ctx: &AppContext, file: &ModVersionFile) -> anyho
     Ok(())
 }
 
-async fn cmd_get(ctx: &AppContext, package_name: String) -> anyhow::Result<()> {
-    let response = search_mods(ctx, package_name).await?;
+async fn cmd_get(ctx: &AppContext, search_args: SearchArgs) -> anyhow::Result<()> {
+    let response = search_mods(ctx, &search_args).await?;
 
     if response.hits.is_empty() {
         // TODO formatting
@@ -377,7 +384,7 @@ async fn main() -> anyhow::Result<()> {
     let config = args.load_config()?;
     let ctx = AppContext { args, config };
     match ctx.args.to_owned().command {
-        Command::Get { package_name } => cmd_get(&ctx, package_name).await,
+        Command::Get(search_args) => cmd_get(&ctx, search_args).await,
         _ => unimplemented!("unimplemented subcommand"),
     }
 }

@@ -18,6 +18,7 @@ A Minecraft mod manager for the terminal.
 - zsh autocomplete
 - nushell autocomplete
 - manpage
+- configurable mod search result display like [Starship](https://starship.rs)
 
 Long-term/host-dependent:
 - conflict resolution
@@ -94,12 +95,6 @@ $ hopper add sodium --mc-version 1.17
 :: Select a mod
 :: ...
 ```
-
-- configurable mod search results like [Starship](https://starship.rs)
-- pad mod indices based on largest number
-- add parameter to restrict target Minecraft version
-- manually pick out Minecraft version
-- square colored creeper face progress indicator (from top-left clockwise spiral in)
 
 ## `hopper get`
 
