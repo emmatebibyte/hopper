@@ -2,7 +2,7 @@ use futures_util::StreamExt;
 use log::*;
 use std::cmp::min;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use structopt::StructOpt;
 
 mod api;
@@ -47,10 +47,10 @@ fn display_search_results(ctx: &AppContext, response: &SearchResponse) {
 }
 
 // TODO implement enum for more graceful exiting
-async fn select_from_results<'a>(
+async fn select_from_results(
     _ctx: &AppContext,
-    response: &'a SearchResponse,
-) -> anyhow::Result<Vec<&'a ModResult>> {
+    response: &SearchResponse,
+) -> anyhow::Result<Vec<ModResult>> {
     let input: String = dialoguer::Input::new()
         .with_prompt("Mods to install (eg: 1 2 3)")
         .interact_text()?;
@@ -75,7 +75,10 @@ async fn select_from_results<'a>(
         }
     }
 
-    Ok(selected.iter().map(|i| &response.hits[*i]).collect())
+    Ok(selected
+        .iter()
+        .map(|i| response.hits[*i].to_owned())
+        .collect())
 }
 
 async fn fetch_mod_info(ctx: &AppContext, mod_result: &ModResult) -> anyhow::Result<ModInfo> {
@@ -102,7 +105,11 @@ async fn fetch_mod_version(ctx: &AppContext, version_id: &String) -> anyhow::Res
     Ok(response)
 }
 
-async fn download_version_file(ctx: &AppContext, file: &ModVersionFile) -> anyhow::Result<()> {
+async fn download_version_file(
+    ctx: &AppContext,
+    target_dir: &Path,
+    file: &ModVersionFile,
+) -> anyhow::Result<()> {
     // TODO replace all uses of .unwrap() with proper error codes
     let filename = &file.filename;
 
@@ -132,8 +139,8 @@ async fn download_version_file(ctx: &AppContext, file: &ModVersionFile) -> anyho
     pb.set_style(ProgressStyle::default_bar().template("{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})").progress_chars("#>-"));
     pb.set_message(&format!("Downloading {}", url));
 
-    let filename = &file.filename;
-    let mut file = std::fs::File::create(filename)?;
+    let filename = target_dir.join(&file.filename);
+    let mut file = std::fs::File::create(&filename)?;
     let mut downloaded: u64 = 0;
     let mut stream = response.bytes_stream();
 
@@ -146,38 +153,46 @@ async fn download_version_file(ctx: &AppContext, file: &ModVersionFile) -> anyho
         pb.set_position(new);
     }
 
-    pb.finish_with_message(&format!("Downloaded {} to {}", url, filename));
+    pb.finish_with_message(&format!("Downloaded {} to {:#?}", url, filename));
     Ok(())
 }
 
-async fn cmd_get(ctx: &AppContext, search_args: SearchArgs) -> anyhow::Result<()> {
+async fn search_and_select(
+    ctx: &AppContext,
+    search_args: &SearchArgs,
+) -> anyhow::Result<Vec<ModResult>> {
     let response = search_mods(ctx, &search_args).await?;
 
     if response.hits.is_empty() {
         // TODO formatting
         println!("No results; nothing to do...");
-        return Ok(());
+        return Ok(vec![]);
     }
 
     display_search_results(ctx, &response);
     let selected = select_from_results(ctx, &response).await?;
 
-    if selected.is_empty() {
-        // TODO formatting
-        println!("No packages selected; nothing to do...");
-        return Ok(());
-    }
+    Ok(selected)
+}
 
-    for to_get in selected.iter() {
+async fn download_mods(
+    ctx: &AppContext,
+    target_dir: Option<&Path>,
+    mods: &Vec<ModResult>,
+) -> anyhow::Result<()> {
+    let current_dir = std::env::current_dir()?;
+    let target_dir = target_dir.unwrap_or(&current_dir);
+    for to_get in mods.iter() {
         let mod_info = fetch_mod_info(ctx, to_get).await?;
 
         // TODO allow the user to select multiple versions
+        // TODO select the most recent version matching search_args.versions
         if let Some(version_id) = mod_info.versions.first() {
             println!("fetching version {}", version_id);
 
             let version = fetch_mod_version(ctx, version_id).await?;
             for file in version.files.iter() {
-                download_version_file(ctx, file).await?;
+                download_version_file(ctx, &target_dir, file).await?;
             }
         }
     }
@@ -185,12 +200,61 @@ async fn cmd_get(ctx: &AppContext, search_args: SearchArgs) -> anyhow::Result<()
     Ok(())
 }
 
+async fn cmd_get(ctx: &AppContext, search_args: SearchArgs) -> anyhow::Result<()> {
+    let selected = search_and_select(ctx, &search_args).await?;
+    if selected.is_empty() {
+        // TODO formatting
+        println!("No packages selected; nothing to do...");
+        return Ok(());
+    }
+
+    // TODO arg for target directory?
+    download_mods(ctx, None, &selected).await?;
+
+    Ok(())
+}
+
 async fn cmd_update(ctx: &AppContext, instance_dir: Option<PathBuf>) -> anyhow::Result<()> {
     let instance_dir = instance_dir.unwrap_or(std::env::current_dir()?);
-    let hopfile = std::fs::read_to_string(instance_dir.join("Hopfile.toml"))?;
+    let hopfile_path = instance_dir.join("Hopfile.toml");
+    let hopfile = std::fs::read_to_string(hopfile_path)?;
     let hopfile: Hopfile = toml::from_str(&hopfile)?;
 
     println!("hopfile: {:#?}", hopfile);
+
+    for (name, entry) in hopfile.mods.iter() {
+        let search_args = SearchArgs {
+            package_name: name.to_string(),
+            version: Some(vec![hopfile.version.to_owned()]),
+        };
+
+        let response = search_mods(ctx, &search_args).await?;
+
+        if response.hits.is_empty() {
+            error!("No results for {}; skipping update...", name);
+            continue;
+        }
+
+        display_search_results(ctx, &response);
+        let selected = loop {
+            let selected = select_from_results(ctx, &response).await?;
+            if selected.is_empty() {
+                use dialoguer::Confirm;
+                let prompt = format!("Really skip updating {}?", name);
+                let confirm = Confirm::new().with_prompt(prompt).interact()?;
+                if !confirm {
+                    println!("Skipping updating {}...", name);
+                } else {
+                    continue;
+                }
+            }
+
+            break selected;
+        };
+
+        // TODO update Hopfile.toml with specific versions using toml_edit crate
+        download_mods(ctx, Some(&instance_dir), &selected).await?;
+    }
 
     Ok(())
 }

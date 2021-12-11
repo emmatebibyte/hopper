@@ -10,7 +10,7 @@ pub struct SearchResponse {
     pub total_hits: isize,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug)]
 pub struct ModResult {
     pub mod_id: String,               // TODO parse to `local-xxxxx` with regex
     pub project_type: Option<String>, // NOTE this isn't in all search results?
