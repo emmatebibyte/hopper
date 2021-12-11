@@ -1,4 +1,5 @@
 use console::style;
+use log::*;
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::cmp::min;
@@ -11,6 +12,10 @@ use structopt::StructOpt;
 #[derive(StructOpt, Clone, Debug)]
 struct SearchArgs {
     package_name: String,
+
+    /// Restricts the target Minecraft version
+    #[structopt(short, long)]
+    version: Option<Vec<String>>,
 }
 
 // TODO use ColoredHelp by default?
@@ -220,8 +225,14 @@ struct ModVersionFile {
 async fn search_mods(ctx: &AppContext, search_args: &SearchArgs) -> anyhow::Result<SearchResponse> {
     let client = reqwest::Client::new();
     let url = format!("https://{}/api/v1/mod", ctx.config.upstream.server_address);
-    let params = [("query", search_args.package_name.as_str())];
+
+    let mut params = vec![("query", search_args.package_name.to_owned())];
+    if let Some(versions) = &search_args.version {
+        params.push(("versions", versions.join(",")));
+    }
+
     let url = reqwest::Url::parse_with_params(url.as_str(), &params)?;
+    info!("GET {}", url);
     let response = client
         .get(url)
         .send()
@@ -385,6 +396,7 @@ async fn cmd_get(ctx: &AppContext, search_args: SearchArgs) -> anyhow::Result<()
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    env_logger::init();
     let args = Args::from_args();
     let config = args.load_config()?;
     let ctx = AppContext { args, config };
