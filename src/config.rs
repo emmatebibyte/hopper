@@ -24,7 +24,7 @@ pub enum Command {
     #[structopt(setting = structopt::clap::AppSettings::ColoredHelp)]
     Get(SearchArgs),
     #[structopt(setting = structopt::clap::AppSettings::ColoredHelp)]
-    Update,
+    Update { instance_dir: Option<PathBuf> },
     #[structopt(setting = structopt::clap::AppSettings::ColoredHelp)]
     Clean,
 }

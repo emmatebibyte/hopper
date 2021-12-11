@@ -357,6 +357,7 @@ dependencies = [
  "serde_json",
  "structopt",
  "tokio",
+ "toml",
 ]
 
 [[package]]

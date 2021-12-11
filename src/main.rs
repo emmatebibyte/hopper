@@ -2,13 +2,16 @@ use futures_util::StreamExt;
 use log::*;
 use std::cmp::min;
 use std::io::Write;
+use std::path::PathBuf;
 use structopt::StructOpt;
 
 mod api;
 mod config;
+mod hopfile;
 
 use api::*;
 use config::*;
+use hopfile::*;
 
 async fn search_mods(ctx: &AppContext, search_args: &SearchArgs) -> anyhow::Result<SearchResponse> {
     let client = reqwest::Client::new();
@@ -182,6 +185,16 @@ async fn cmd_get(ctx: &AppContext, search_args: SearchArgs) -> anyhow::Result<()
     Ok(())
 }
 
+async fn cmd_update(ctx: &AppContext, instance_dir: Option<PathBuf>) -> anyhow::Result<()> {
+    let instance_dir = instance_dir.unwrap_or(std::env::current_dir()?);
+    let hopfile = std::fs::read_to_string(instance_dir.join("Hopfile.toml"))?;
+    let hopfile: Hopfile = toml::from_str(&hopfile)?;
+
+    println!("hopfile: {:#?}", hopfile);
+
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     env_logger::init();
@@ -190,6 +203,7 @@ async fn main() -> anyhow::Result<()> {
     let ctx = AppContext { args, config };
     match ctx.args.to_owned().command {
         Command::Get(search_args) => cmd_get(&ctx, search_args).await,
+        Command::Update { instance_dir } => cmd_update(&ctx, instance_dir).await,
         _ => unimplemented!("unimplemented subcommand"),
     }
 }
