@@ -23,13 +23,13 @@ async fn search_mods(ctx: &AppContext, search_args: &SearchArgs) -> anyhow::Resu
     }
 
     let url = reqwest::Url::parse_with_params(url.as_str(), &params)?;
-    info!("GET {}", url);
+    info!("Searching for mods: {}", url);
     let response = client
         .get(url)
         .send()
-        .await?
-        .json::<SearchResponse>()
         .await?;
+    info!("Search results: {:#?}", response);
+    let response = response.json::<SearchResponse>().await?;
     Ok(response)
 }
 
@@ -89,7 +89,9 @@ async fn fetch_mod_info(ctx: &AppContext, mod_result: &ModResult) -> anyhow::Res
         "https://{}/api/v1/mod/{}",
         ctx.config.upstream.server_address, mod_id
     );
+    info!("Fetching mod info: {}", url);
     let response = client.get(url).send().await?;
+    info!("Mod info: {:#?}", response);
     let response = response.json::<ModInfo>().await?;
     Ok(response)
 }
@@ -100,7 +102,9 @@ async fn fetch_mod_version(ctx: &AppContext, version_id: &String) -> anyhow::Res
         "https://{}/api/v1/version/{}",
         ctx.config.upstream.server_address, version_id
     );
+    info!("Fetching mod version: {}", url);
     let response = client.get(url).send().await?;
+    info!("Mod version: {:#?}", response);
     let response = response.json::<ModVersion>().await?;
     Ok(response)
 }
@@ -127,8 +131,11 @@ async fn download_version_file(
         }
     }
 
-    let client = reqwest::Client::new();
     let url = &file.url;
+    let filename = target_dir.join(&file.filename);
+    info!("Downloading {} to {:?}", url, filename);
+
+    let client = reqwest::Client::new();
     let response = client.get(url).send().await?;
     let total_size = response.content_length().unwrap();
 
@@ -139,7 +146,6 @@ async fn download_version_file(
     pb.set_style(ProgressStyle::default_bar().template("{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})").progress_chars("#>-"));
     pb.set_message(&format!("Downloading {}", url));
 
-    let filename = target_dir.join(&file.filename);
     let mut file = std::fs::File::create(&filename)?;
     let mut downloaded: u64 = 0;
     let mut stream = response.bytes_stream();
