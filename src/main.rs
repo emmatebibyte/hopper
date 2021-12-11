@@ -175,9 +175,39 @@ async fn search_and_select(
     Ok(selected)
 }
 
+async fn pick_mod_version(
+    ctx: &AppContext,
+    mod_info: &ModInfo,
+    target_versions: &Option<Vec<String>>,
+) -> anyhow::Result<Option<ModVersion>> {
+    // TODO allow the user to select multiple versions?
+    match target_versions {
+        Some(target_versions) => {
+            for version_id in mod_info.versions.iter() {
+                let version = fetch_mod_version(ctx, version_id).await?;
+                for supported_version in version.game_versions.iter() {
+                    if target_versions.contains(supported_version) {
+                        return Ok(Some(version));
+                    }
+                }
+            }
+
+            Ok(None)
+        }
+        None => {
+            if let Some(version_id) = mod_info.versions.first() {
+                Ok(Some(fetch_mod_version(ctx, version_id).await?))
+            } else {
+                Ok(None)
+            }
+        }
+    }
+}
+
 async fn download_mods(
     ctx: &AppContext,
     target_dir: Option<&Path>,
+    target_versions: &Option<Vec<String>>,
     mods: &Vec<ModResult>,
 ) -> anyhow::Result<()> {
     let current_dir = std::env::current_dir()?;
@@ -185,15 +215,14 @@ async fn download_mods(
     for to_get in mods.iter() {
         let mod_info = fetch_mod_info(ctx, to_get).await?;
 
-        // TODO allow the user to select multiple versions
-        // TODO select the most recent version matching search_args.versions
-        if let Some(version_id) = mod_info.versions.first() {
-            println!("fetching version {}", version_id);
-
-            let version = fetch_mod_version(ctx, version_id).await?;
+        let version = pick_mod_version(ctx, &mod_info, target_versions).await?;
+        if let Some(version) = version {
             for file in version.files.iter() {
                 download_version_file(ctx, &target_dir, file).await?;
             }
+        } else {
+            // TODO message formatting
+            println!("No versions to download for mod {}", mod_info.title);
         }
     }
 
@@ -209,7 +238,7 @@ async fn cmd_get(ctx: &AppContext, search_args: SearchArgs) -> anyhow::Result<()
     }
 
     // TODO arg for target directory?
-    download_mods(ctx, None, &selected).await?;
+    download_mods(ctx, None, &search_args.version, &selected).await?;
 
     Ok(())
 }
@@ -221,6 +250,9 @@ async fn cmd_update(ctx: &AppContext, instance_dir: Option<PathBuf>) -> anyhow::
     let hopfile: Hopfile = toml::from_str(&hopfile)?;
 
     println!("hopfile: {:#?}", hopfile);
+
+    // TODO cover range of Minecraft versions? (e.g. 1.18 = 1.18.1, 1.18.2, etc.)
+    let target_versions = Some(vec![hopfile.version.to_owned()]);
 
     for (name, entry) in hopfile.mods.iter() {
         let search_args = SearchArgs {
@@ -253,7 +285,7 @@ async fn cmd_update(ctx: &AppContext, instance_dir: Option<PathBuf>) -> anyhow::
         };
 
         // TODO update Hopfile.toml with specific versions using toml_edit crate
-        download_mods(ctx, Some(&instance_dir), &selected).await?;
+        download_mods(ctx, Some(&instance_dir), &target_versions, &selected).await?;
     }
 
     Ok(())
