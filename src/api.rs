@@ -87,7 +87,7 @@ pub struct ModInfo {
 pub struct License {
     pub id: String,
     pub name: String,
-    pub url: String,
+    pub url: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
