@@ -153,7 +153,7 @@ impl ModResult {
         let index = style(index).magenta();
         let info = self.format_info();
         let description = self.format_description();
-        println!("{} {}\n    {}", index, info, description);
+        println!("{:>2} {}\n    {}", index, info, description);
     }
 }
 
@@ -231,7 +231,6 @@ async fn search_mods(ctx: &AppContext, search_args: &SearchArgs) -> anyhow::Resu
     Ok(response)
 }
 
-// TODO pad mod indices based on largest number
 fn display_search_results(ctx: &AppContext, response: &SearchResponse) {
     let iter = response.hits.iter().enumerate();
     if ctx.config.options.reverse_search {

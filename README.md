@@ -19,6 +19,7 @@ A Minecraft mod manager for the terminal.
 - nushell autocomplete
 - manpage
 - configurable mod search result display like [Starship](https://starship.rs)
+- `display` command or something that displays (cached?) mod info
 
 Long-term/host-dependent:
 - conflict resolution
