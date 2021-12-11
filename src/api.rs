@@ -13,6 +13,7 @@ pub struct SearchResponse {
 #[derive(Clone, Deserialize, Debug)]
 pub struct ModResult {
     pub mod_id: String,               // TODO parse to `local-xxxxx` with regex
+    pub slug: String, // not in the API docs, but shows up in queries anyways
     pub project_type: Option<String>, // NOTE this isn't in all search results?
     pub author: String,
     pub title: String,

@@ -175,8 +175,39 @@ async fn search_and_select(
         return Ok(vec![]);
     }
 
+    // TODO add a config file option to disable this
+    if let Some(first_result) = response.hits.first() {
+        if response.hits.len() == 1 {
+            println!("autoselecting only mod result");
+            return Ok(vec![first_result.to_owned()]);
+        }
+    }
+
+    // TODO add a config file option to disable this
+    for mod_info in response.hits.iter() {
+        if mod_info.slug == search_args.package_name {
+            println!("autoselecting mod result slug with exact match");
+            return Ok(vec![mod_info.to_owned()]);
+        }
+    }
+
     display_search_results(ctx, &response);
-    let selected = select_from_results(ctx, &response).await?;
+    let selected = loop {
+        let selected = select_from_results(ctx, &response).await?;
+        if selected.is_empty() {
+            use dialoguer::Confirm;
+            let mod_name = &search_args.package_name;
+            let prompt = format!("Really skip downloading {}?", mod_name);
+            let confirm = Confirm::new().with_prompt(prompt).interact()?;
+            if !confirm {
+                println!("Skipping updating {}...", mod_name);
+            } else {
+                continue;
+            }
+        }
+
+        break selected;
+    };
 
     Ok(selected)
 }
@@ -266,30 +297,7 @@ async fn cmd_update(ctx: &AppContext, instance_dir: Option<PathBuf>) -> anyhow::
             version: Some(vec![hopfile.version.to_owned()]),
         };
 
-        let response = search_mods(ctx, &search_args).await?;
-
-        if response.hits.is_empty() {
-            error!("No results for {}; skipping update...", name);
-            continue;
-        }
-
-        display_search_results(ctx, &response);
-        let selected = loop {
-            let selected = select_from_results(ctx, &response).await?;
-            if selected.is_empty() {
-                use dialoguer::Confirm;
-                let prompt = format!("Really skip updating {}?", name);
-                let confirm = Confirm::new().with_prompt(prompt).interact()?;
-                if !confirm {
-                    println!("Skipping updating {}...", name);
-                } else {
-                    continue;
-                }
-            }
-
-            break selected;
-        };
-
+        let selected = search_and_select(ctx, &search_args).await?;
         // TODO update Hopfile.toml with specific versions using toml_edit crate
         download_mods(ctx, Some(&instance_dir), &target_versions, &selected).await?;
     }
