@@ -1,3 +1,5 @@
+### Deprecated - check out [Ferium](https://github.com/theRookieCoder/ferium)
+
 ```
               ___---___
         ___---    |    ---___
