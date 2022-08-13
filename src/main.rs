@@ -44,35 +44,54 @@ fn display_search_results(ctx: &AppContext, response: &SearchResponse) {
 }
 
 // TODO implement enum for more graceful exiting
-async fn select_from_results<'a>(
+async fn select_from_results(
     _ctx: &AppContext,
-    response: &'a SearchResponse,
-) -> anyhow::Result<Vec<&'a ModResult>> {
+    response: &SearchResponse,
+) -> anyhow::Result<Vec<usize>> {
     let input: String = dialoguer::Input::new()
-        .with_prompt("Mods to install (eg: 1 2 3)")
+        .with_prompt("Mods to install (eg: 1 2 3-5)")
         .interact_text()?;
 
     let mut selected: Vec<usize> = Vec::new();
     for token in input.split(" ") {
-        // TODO range input (eg: 1-3)
-        let index: usize = token.parse().expect("Token must be an integer");
-        if index < 1 || index > response.hits.len() {
-            // TODO return useful error instead of panicking
-            panic!("Index {} is out of bounds", index);
-        }
+        let terms: Vec<&str> = token.split("-").collect();
 
-        // input is indexed from 1, but results are indexed from 0
-        let index = index - 1;
+        match terms.len() {
+            1 => selected.push(terms[0].parse().expect("Token must be an integer")),
+            2 => {
+                let terms: Vec<usize> = terms
+                    .iter()
+                    .map(|term| term.parse().expect("Term must be an integer"))
+                    .collect();
+                let from = terms[0];
+                let to = terms[1];
 
-        if !selected.contains(&index) {
-            selected.push(index);
-        } else {
-            // TODO make this a proper warning log message
-            println!("warning: repeated index {}", index);
+                for index in from..=to {
+                    selected.push(index);
+                }
+            }
+            _ => panic!("Invalid selection token {}", token),
         }
     }
 
-    Ok(selected.iter().map(|i| &response.hits[*i]).collect())
+    selected.dedup();
+
+    let selected = selected
+        .iter()
+        .map(|index| {
+            if *index < 1 || *index > response.hits.len() {
+                // TODO return useful error instead of panicking
+                panic!("Index {} is out of bounds", index);
+            }
+
+            // input is indexed from 1, but results are indexed from 0
+            let index = index - 1;
+
+            index
+        })
+        .collect();
+
+    Ok(selected)
 }
 
 async fn fetch_mod_info(ctx: &AppContext, mod_result: &ModResult) -> anyhow::Result<ModInfo> {
@@ -165,7 +184,8 @@ async fn cmd_get(ctx: &AppContext, search_args: SearchArgs) -> anyhow::Result<()
         return Ok(());
     }
 
-    for to_get in selected.iter() {
+    for selection in selected.iter() {
+        let to_get = &response.hits[*selection];
         let mod_info = fetch_mod_info(ctx, to_get).await?;
 
         // TODO allow the user to select multiple versions
