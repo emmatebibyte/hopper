@@ -80,13 +80,20 @@ pub struct ModInfo {
     pub source_url: Option<String>,
     pub wiki_url: Option<String>,
     pub discord_url: Option<String>,
-    pub donation_urls: Vec<String>,
+    pub donation_urls: Vec<DonationLink>,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct License {
     pub id: String,
     pub name: String,
+    pub url: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct DonationLink {
+    pub id: String,
+    pub platform: String,
     pub url: String,
 }
 
@@ -105,7 +112,7 @@ pub struct ModVersion {
     pub downloads: isize,
     pub version_type: String, // TODO {alpha | beta | release}
     pub files: Vec<ModVersionFile>,
-    pub dependencies: Vec<String>, // TODO dependency wrangling, thank you modrinth, very cool
+    // pub dependencies: Vec<String>, // TODO dependency wrangling, thank you modrinth, very cool
     pub game_versions: Vec<String>,
     pub loaders: Vec<String>,
 }
