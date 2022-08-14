@@ -11,11 +11,12 @@ use api::*;
 use config::*;
 
 async fn search_mods(ctx: &AppContext, search_args: &SearchArgs) -> anyhow::Result<SearchResponse> {
+    println!("Searching with query \"{}\"...", search_args.package_name);
+
     let client = reqwest::Client::new();
     let url = format!("https://{}/api/v1/mod", ctx.config.upstream.server_address);
 
-    let mut params = vec![("query", search_args.package_name.to_owned())];
-    if let Some(versions) = &search_args.version {
+    let mut params = vec![("query", search_args.package_name.to_owned())]; if let Some(versions) = &search_args.version {
         params.push(("versions", versions.join(",")));
     }
 
@@ -95,24 +96,30 @@ async fn select_from_results(
 }
 
 async fn fetch_mod_info(ctx: &AppContext, mod_result: &ModResult) -> anyhow::Result<ModInfo> {
-    let client = reqwest::Client::new();
     let mod_id = &mod_result.mod_id;
+    println!("Fetching mod info for {} (ID: {})...", mod_result.title, mod_id);
+
+    let client = reqwest::Client::new();
     let mod_id = mod_id[6..].to_owned(); // Remove "local-" prefix
     let url = format!(
         "https://{}/api/v1/mod/{}",
         ctx.config.upstream.server_address, mod_id
     );
+    info!("GET {}", url);
     let response = client.get(url).send().await?;
     let response = response.json::<ModInfo>().await?;
     Ok(response)
 }
 
 async fn fetch_mod_version(ctx: &AppContext, version_id: &String) -> anyhow::Result<ModVersion> {
+    println!("Fetching mod version {}...", version_id);
+
     let client = reqwest::Client::new();
     let url = format!(
         "https://{}/api/v1/version/{}",
         ctx.config.upstream.server_address, version_id
     );
+    info!("GET {}", url);
     let response = client.get(url).send().await?;
     let response = response.json::<ModVersion>().await?;
     Ok(response)
@@ -138,6 +145,7 @@ async fn download_version_file(ctx: &AppContext, file: &ModVersionFile) -> anyho
 
     let client = reqwest::Client::new();
     let url = &file.url;
+    info!("GET {}", url);
     let response = client.get(url).send().await?;
     let total_size = response.content_length().unwrap();
 
