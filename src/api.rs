@@ -68,26 +68,26 @@ pub struct ModInfo {
     pub client_side: String,                // TODO serialize as enum
     pub server_side: String,                // TODO serialize as enum
     pub body: String,
-    pub issues_url: String,
-    pub source_url: String,
+    pub issues_url: Option<String>,
+    pub source_url: Option<String>,
     pub wiki_url: Option<String>,
-    pub discord_url: String,
-    pub donation_urls: Vec<DonationLink>,
+    pub discord_url: Option<String>,
+    pub donation_urls: Option<Vec<DonationLink>>,
     pub project_type: String,
     pub downloads: isize,
-    pub icon_url: String,
+    pub icon_url: Option<String>,
     pub id: String,               // TODO serialize mod id?
     pub team: String,             // TODO serialize team id?
     pub body_url: Option<String>, // NOTE deprecated
     pub moderator_message: Option<String>,
-    pub published: String, // TODO serialize as datetime
-    pub updated: String,   // TODO serialize as datetime
-    pub approved: String,  // NOTE not listed in OpenAPI docs, TODO serialize as datetime
+    pub published: String,        // TODO serialize as datetime
+    pub updated: String,          // TODO serialize as datetime
+    pub approved: Option<String>, // NOTE not listed in OpenAPI docs, TODO serialize as datetime
     pub followers: isize,
     pub status: String,
     pub license: License,
     pub versions: Vec<String>,
-    pub gallery: Vec<GalleryEntry>,
+    pub gallery: Option<Vec<GalleryEntry>>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -118,7 +118,7 @@ pub struct ModVersion {
     pub name: String,
     pub version_number: String,
     pub changelog: Option<String>,
-    // pub dependencies: Vec<String>, // TODO dependency wrangling, thank you modrinth, very cool
+    // pub dependencies: Option<Vec<String>>, // TODO dependency wrangling, thank you modrinth, very cool
     pub game_versions: Vec<String>,
     pub version_type: String, // TODO {alpha | beta | release}
     pub loaders: Vec<String>,
