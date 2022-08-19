@@ -14,10 +14,16 @@ async fn search_mods(ctx: &AppContext, search_args: &SearchArgs) -> anyhow::Resu
     println!("Searching with query \"{}\"...", search_args.package_name);
 
     let client = reqwest::Client::new();
-    let url = format!("https://{}/api/v1/mod", ctx.config.upstream.server_address);
+    let url = format!("https://{}/v2/search", ctx.config.upstream.server_address);
 
-    let mut params = vec![("query", search_args.package_name.to_owned())]; if let Some(versions) = &search_args.version {
-        params.push(("versions", versions.join(",")));
+    let mut params = vec![("query", search_args.package_name.to_owned())];
+    if let Some(versions) = &search_args.version {
+        let versions_facets = versions
+            .iter()
+            .map(|e| format!("[\"versions:{}\"]", e))
+            .collect::<Vec<String>>()
+            .join(",");
+        params.push(("facets", format!("[{}]", versions_facets)));
     }
 
     let url = reqwest::Url::parse_with_params(url.as_str(), &params)?;
@@ -96,13 +102,15 @@ async fn select_from_results(
 }
 
 async fn fetch_mod_info(ctx: &AppContext, mod_result: &ModResult) -> anyhow::Result<ModInfo> {
-    let mod_id = &mod_result.mod_id;
-    println!("Fetching mod info for {} (ID: {})...", mod_result.title, mod_id);
+    let mod_id = &mod_result.project_id;
+    println!(
+        "Fetching mod info for {} (ID: {})...",
+        mod_result.title, mod_id
+    );
 
     let client = reqwest::Client::new();
-    let mod_id = mod_id[6..].to_owned(); // Remove "local-" prefix
     let url = format!(
-        "https://{}/api/v1/mod/{}",
+        "https://{}/v2/project/{}",
         ctx.config.upstream.server_address, mod_id
     );
     info!("GET {}", url);
@@ -116,7 +124,7 @@ async fn fetch_mod_version(ctx: &AppContext, version_id: &String) -> anyhow::Res
 
     let client = reqwest::Client::new();
     let url = format!(
-        "https://{}/api/v1/version/{}",
+        "https://{}/v2/version/{}",
         ctx.config.upstream.server_address, version_id
     );
     info!("GET {}", url);
