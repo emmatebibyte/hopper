@@ -1,41 +1,12 @@
-use futures_util::StreamExt;
-use log::*;
-use std::cmp::min;
-use std::io::Write;
 use structopt::StructOpt;
 
 mod api;
+mod client;
 mod config;
 
 use api::*;
+use client::*;
 use config::*;
-
-async fn search_mods(ctx: &AppContext, search_args: &SearchArgs) -> anyhow::Result<SearchResponse> {
-    println!("Searching with query \"{}\"...", search_args.package_name);
-
-    let client = reqwest::Client::new();
-    let url = format!("https://{}/v2/search", ctx.config.upstream.server_address);
-
-    let mut params = vec![("query", search_args.package_name.to_owned())];
-    if let Some(versions) = &search_args.version {
-        let versions_facets = versions
-            .iter()
-            .map(|e| format!("[\"versions:{}\"]", e))
-            .collect::<Vec<String>>()
-            .join(",");
-        params.push(("facets", format!("[{}]", versions_facets)));
-    }
-
-    let url = reqwest::Url::parse_with_params(url.as_str(), &params)?;
-    info!("GET {}", url);
-    let response = client
-        .get(url)
-        .send()
-        .await?
-        .json::<SearchResponse>()
-        .await?;
-    Ok(response)
-}
 
 fn display_search_results(ctx: &AppContext, response: &SearchResponse) {
     let iter = response.hits.iter().enumerate();
@@ -101,89 +72,9 @@ async fn select_from_results(
     Ok(selected)
 }
 
-async fn fetch_mod_info(ctx: &AppContext, mod_result: &ModResult) -> anyhow::Result<ModInfo> {
-    let mod_id = &mod_result.project_id;
-    println!(
-        "Fetching mod info for {} (ID: {})...",
-        mod_result.title, mod_id
-    );
-
-    let client = reqwest::Client::new();
-    let url = format!(
-        "https://{}/v2/project/{}",
-        ctx.config.upstream.server_address, mod_id
-    );
-    info!("GET {}", url);
-    let response = client.get(url).send().await?;
-    let response = response.json::<ModInfo>().await?;
-    Ok(response)
-}
-
-async fn fetch_mod_version(ctx: &AppContext, version_id: &String) -> anyhow::Result<ModVersion> {
-    println!("Fetching mod version {}...", version_id);
-
-    let client = reqwest::Client::new();
-    let url = format!(
-        "https://{}/v2/version/{}",
-        ctx.config.upstream.server_address, version_id
-    );
-    info!("GET {}", url);
-    let response = client.get(url).send().await?;
-    let response = response.json::<ModVersion>().await?;
-    Ok(response)
-}
-
-async fn download_version_file(ctx: &AppContext, file: &ModVersionFile) -> anyhow::Result<()> {
-    // TODO replace all uses of .unwrap() with proper error codes
-    let filename = &file.filename;
-
-    // TODO make confirmation skippable with flag argument
-    if !ctx.args.auto_accept {
-        use dialoguer::Confirm;
-        let prompt = format!("Download to {}?", filename);
-        let confirm = Confirm::new()
-            .with_prompt(prompt)
-            .default(true)
-            .interact()?;
-        if !confirm {
-            println!("Skipping downloading {}...", filename);
-            return Ok(());
-        }
-    }
-
-    let client = reqwest::Client::new();
-    let url = &file.url;
-    info!("GET {}", url);
-    let response = client.get(url).send().await?;
-    let total_size = response.content_length().unwrap();
-
-    // TODO better colors and styling!
-    // TODO square colored creeper face progress indicator (from top-left clockwise spiral in)
-    use indicatif::{ProgressBar, ProgressStyle};
-    let pb = ProgressBar::new(total_size);
-    pb.set_style(ProgressStyle::default_bar().template("{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})").progress_chars("#>-"));
-    pb.set_message(&format!("Downloading {}", url));
-
-    let filename = &file.filename;
-    let mut file = std::fs::File::create(filename)?;
-    let mut downloaded: u64 = 0;
-    let mut stream = response.bytes_stream();
-
-    // TODO check hashes while streaming
-    while let Some(item) = stream.next().await {
-        let chunk = &item.unwrap();
-        file.write(&chunk)?;
-        let new = min(downloaded + (chunk.len() as u64), total_size);
-        downloaded = new;
-        pb.set_position(new);
-    }
-
-    pb.finish_with_message(&format!("Downloaded {} to {}", url, filename));
-    Ok(())
-}
-
 async fn cmd_get(ctx: &AppContext, search_args: SearchArgs) -> anyhow::Result<()> {
-    let response = search_mods(ctx, &search_args).await?;
+    let client = HopperClient::new(ctx.config.clone());
+    let response = client.search_mods(&search_args).await?;
 
     if response.hits.is_empty() {
         // TODO formatting
@@ -202,15 +93,15 @@ async fn cmd_get(ctx: &AppContext, search_args: SearchArgs) -> anyhow::Result<()
 
     for selection in selected.iter() {
         let to_get = &response.hits[*selection];
-        let mod_info = fetch_mod_info(ctx, to_get).await?;
+        let mod_info = client.fetch_mod_info(to_get).await?;
 
         // TODO allow the user to select multiple versions
         if let Some(version_id) = mod_info.versions.first() {
             println!("fetching version {}", version_id);
 
-            let version = fetch_mod_version(ctx, version_id).await?;
+            let version = client.fetch_mod_version(version_id).await?;
             for file in version.files.iter() {
-                download_version_file(ctx, file).await?;
+                client.download_version_file(&ctx.args, file).await?;
             }
         }
     }
