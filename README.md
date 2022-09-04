@@ -179,33 +179,33 @@ source = git+https://github.com/IrisShaders/Iris.git
 `get [OPTIONS] PACKAGE`
 
 &emsp;Searches for a PACKAGE, displays the results, and downloads any selected
-&emsp;PACKAGES to the local cache.
+PACKAGES to the local cache.
 
 OPTIONS
 
 &emsp;`-n`, `--no-confirm`
 
 &emsp;&emsp;Does not display search results and downloads exact matches to the
-&emsp;&emsp;cache. Requires `--mc-version` and `--type` be specified.
+cache. Requires `--mc-version` and `--type` be specified.
 
 `init [OPTIONS] [--mc-version=VERSION] [--type=TYPE] TEMPLATE`
 
 &emsp;Creates a hopfile in the current directory and adds it to the global known
-&emsp;hopfiles list in the configuration file. If a TEMPLATE is passed as an
-&emsp;argument, the hopfile is added as a new template. A name is generated
-&emsp;using the VERSION and TYPE specified unless `--filename` is used.
+hopfiles list in the configuration file. If a TEMPLATE is passed as an
+argument, the hopfile is added as a new template. A name is generated
+using the VERSION and TYPE specified unless `--filename` is used.
 
 OPTIONS
 
 &emsp;`--template[=TEMPLATE1,TEMPLATE2...]`
 
 &emsp;&emsp;Specifies TEMPLATE hopfiles' names upon which to base the new
-&emsp;&emsp;hopfile.
+hopfile.
 
 `install [OPTIONS] PACKAGE`
 
 &emsp;Adds a PACKAGE to the current hopfile and runs `hopper update`. If the
-&emsp;PACKAGE cannot be found in the package cache, it runs `hopper get` first.
+PACKAGE cannot be found in the package cache, it runs `hopper get` first.
 
 OPTIONS
 
@@ -220,5 +220,5 @@ OPTIONS
 `update [OPTIONS] PACKAGE`
 
 &emsp;Updates installed PACKAGEs and adds mods if they're missing to directories
-&emsp;with known hopfiles. If a PACKAGE is passed, `--type` must be specified so
-&emsp;that hopper `update`s the correct package.
+with known hopfiles. If a PACKAGE is passed, `--type` must be specified so that
+hopper `update`s the correct package.
