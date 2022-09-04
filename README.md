@@ -155,53 +155,69 @@ source = git+https://github.com/IrisShaders/Iris.git
 ## Common OPTIONS:
 
 `-d`, `--dir[=FILE]`
-    Specifies the path for the hopfile being utilized
+
+&emsp;Specifies the path for the hopfile being utilized
 
 `-f`, `--filename=[FILE]`
-    Saves to a specific file name.
+
+&emsp;Saves to a specific file name.
 
 `-m`, `--mc-version[=VERSION]`
-    Specifies for what VERSION of Minecraft PACKAGES are being managed
+
+&emsp;Specifies for what VERSION of Minecraft PACKAGES are being managed
 
 `-t`, `--type[=TYPE]`
-    Specifies what TYPE of PACKAGEs is being referenced
+
+&emsp;Specifies what TYPE of PACKAGEs is being referenced
 
 `-v`, `--verbose`
-    Includes debug information in the output of `hopper` commands.
+
+&emsp;Includes debug information in the output of `hopper` commands.
 
 ## SUBCOMMANDs
 
 `get [OPTIONS] PACKAGE`
-    Searches for a PACKAGE, displays the results, and downloads any selected
-    PACKAGES to the local cache.
+
+&emsp;Searches for a PACKAGE, displays the results, and downloads any selected
+&emsp;PACKAGES to the local cache.
 
 OPTIONS
+
     `-n`, `--no-confirm`
-        Does not display search results and downloads exact matches to the
-        cache. Requires `--mc-version` and `--type` be specified.
+
+&emsp;&emspDoes not display search results and downloads exact matches to the
+&emsp;&emsp;cache. Requires `--mc-version` and `--type` be specified.
 
 `init [OPTIONS] [--mc-version=VERSION] [--type=TYPE] TEMPLATE`
-    Creates a hopfile in the current directory and adds it to the global known
-    hopfiles list in the configuration file. If a TEMPLATE is passed as an
-    argument, the hopfile is added as a new template. A name is generated using
-    the VERSION and TYPE specified unless `--filename` is used.
+
+&emsp;Creates a hopfile in the current directory and adds it to the global known
+&emsp;hopfiles list in the configuration file. If a TEMPLATE is passed as an
+&emsp;argument, the hopfile is added as a new template. A name is generated using
+&emsp;the VERSION and TYPE specified unless `--filename` is used.
 
 OPTIONS
+
     `--template[=TEMPLATE1,TEMPLATE2...]`
-        Specifies TEMPLATE hopfiles' names upon which to base the new hopfile.
+
+&emsp;&emsp;Specifies TEMPLATE hopfiles' names upon which to base the new hopfile.
 
 `install [OPTIONS] PACKAGE`
-    Adds a PACKAGE to the current hopfile and runs `hopper update`. If the
-    PACKAGE cannot be found in the package cache, it runs `hopper get` first.
+
+&emsp;Adds a PACKAGE to the current hopfile and runs `hopper update`. If the
+&emsp;PACKAGE cannot be found in the package cache, it runs `hopper get` first.
 
 OPTIONS
-    `--template[=TEMPLATE1,TEMPLATE2...]`
-        Specifies a template hopfile to which to install mods
+
+&emsp;`--template[=TEMPLATE1,TEMPLATE2...]`
+
+&emsp;&emsp;Specifies a template hopfile to which to install mods
 
 `list [OPTIONS]`
-    Lists all installed packages.
+
+&emsp;Lists all installed packages.
 
 `update [OPTIONS] PACKAGE`
-    Updates installed PACKAGEs and adds mods if they're missing to directories
-    with known hopfiles. If a PACKAGE is passed, `--type` must be specified so
-    that hopper `update`s the correct package.
+
+&emsp;Updates installed PACKAGEs and adds mods if they're missing to directories
+&emsp;with known hopfiles. If a PACKAGE is passed, `--type` must be specified so
+&emsp;that hopper `update`s the correct package.
