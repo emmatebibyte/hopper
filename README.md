@@ -183,23 +183,24 @@ source = git+https://github.com/IrisShaders/Iris.git
 
 OPTIONS
 
-    `-n`, `--no-confirm`
+&emsp;`-n`, `--no-confirm`
 
-&emsp;&emspDoes not display search results and downloads exact matches to the
+&emsp;&emsp;Does not display search results and downloads exact matches to the
 &emsp;&emsp;cache. Requires `--mc-version` and `--type` be specified.
 
 `init [OPTIONS] [--mc-version=VERSION] [--type=TYPE] TEMPLATE`
 
 &emsp;Creates a hopfile in the current directory and adds it to the global known
 &emsp;hopfiles list in the configuration file. If a TEMPLATE is passed as an
-&emsp;argument, the hopfile is added as a new template. A name is generated using
-&emsp;the VERSION and TYPE specified unless `--filename` is used.
+&emsp;argument, the hopfile is added as a new template. A name is generated
+&emsp;using the VERSION and TYPE specified unless `--filename` is used.
 
 OPTIONS
 
-    `--template[=TEMPLATE1,TEMPLATE2...]`
+&emsp;`--template[=TEMPLATE1,TEMPLATE2...]`
 
-&emsp;&emsp;Specifies TEMPLATE hopfiles' names upon which to base the new hopfile.
+&emsp;&emsp;Specifies TEMPLATE hopfiles' names upon which to base the new
+&emsp;&emsp;hopfile.
 
 `install [OPTIONS] PACKAGE`
 
