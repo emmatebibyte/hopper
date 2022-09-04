@@ -19,119 +19,189 @@
 
 # Hopper
 
-A Minecraft mod manager for the terminal.
+A Minecraft package manager for the terminal.
 
-Hopper can automatically search, download, and update Minecraft mods from https://modrinth.com/ so that keeping your mods up-to-date and compatible with each other is easy. With Hopper, you won't have to manually visit CurseForge and download each mod one-by-one every time you set up a new instance, or deal with the hassle of swapping out different mod versions for hours while trying to get Minecraft to accept them all at once.
+Hopper can automatically search, download, and update Minecraft mods from
+https://modrinth.com/ so that keeping your mods up-to-date and compatible with
+each other is easy. With Hopper, you won't have to manually visit CurseForge and
+download each mod one-by-one every time you set up a new instance, or deal with
+the hassle of swapping out different mod versions for hours while trying to get
+Minecraft to accept them all at once.
 
-Hopper is still very early in development, but important features are coming along smoothly, and we'll have lots of progress to show off in the coming weeks. It's written in Rust and released under the AGPLv3.
+Hopper is still very early in development, but important features are coming
+along smoothly, and we'll have lots of progress to show off in the coming weeks.
+It's written in Rust and released under the AGPLv3.
 
-We're looking for people to help contribute code, design the terminal interface, write documentation, and design a logo. Please reach out to us in [our Discord "server"](https://discord.gg/jJutHQjsh9) if you're interested in helping out. If you have a taste in CLI-based apps like Hopper, your input is especially appreciated.
+We're looking for people to help contribute code and write documentation. Please
+reach out to us in [our Discord "server"](https://discord.gg/jJutHQjsh9) if
+you're interested in helping out. If you have a taste in CLI apps like Hopper,
+your input is especially appreciated.
 
-Inspired by CLI apps like:
-- [paru](https://github.com/morganamilo/paru): Feature packed AUR helper
-- [topgrade](https://github.com/r-darwish/topgrade): Upgrade everything
+Inspired by applications like [paru](https://github.com/morganamilo/paru), a
+feature-packed AUR helper and [topgrade](https://github.com/r-darwish/topgrade).
+a tool to upgrade everything
 
-### Donate
+# Donate
 
-<noscript><a href="https://liberapay.com/tebibytemedia/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a></noscript>
+<noscript><a
+href="https://liberapay.com/tebibytemedia/donate"><img alt="Donate using
+Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a></noscript>
 
 # High-level Goals
 
-Continuous:
-- small binary size
-- minimal compile times
+## Continuous
+- Small binary size
+- Minimal compile times
 
-Features:
-- modrinth mod searching
-- modrinth mod installation
-- curseforge api too?
-- per-instance mod management
-- mod updating
-- fish autocomplete
-- bash autocomplete
-- zsh autocomplete
-- nushell autocomplete
-- manpage
-- configurable mod search result display like [Starship](https://starship.rs)
-- `display` command or something that displays (cached?) mod info
-- parallel mod downloading
+## Features
 
-Long-term/host-dependent:
-- conflict resolution
-- dependency resolution
-- shaderpack and resource pack management
-- integrate into multimc or theseus
-- graphical frontend (w/ notifications?)
+### High Priority:
+- Modrinth package searching
+- Modrinth package installation
+- Parallel package downloading
+- Per-instance package management
+- Package updating
+- Listing installed packages
 
-[Modrinth REST API docs](https://github.com/modrinth/labrinth/wiki/API-Documentation)
+### Medium Priority
+- CurseForge package searching
+- CurseForge package installation
+- A `man(1)` entry
+
+### Low Priority:
+- `fish(1)` autocomplete
+- `bash(1)` autocomplete
+- `zsh(1)` autocomplete
+- [Nushell](https://www.nushell.sh/) autocomplete
+- Configurable search result display like [Starship](https://starship.rs)
+
+## External-Dependent:
+- Conflict resolution
+- Dependency resolution
+- Integration into [PolyMC](https://polymc.org/) and/or
+[theseus](https://github.com/modrinth/theseus)
+- Integration into `togprade(1)`
+- Graphical frontend with notifications
+
+[Modrinth REST API
+docs](https://docs.modrinth.com/api-spec/)
 
 # File Architecture
 
-```bash
-- .config/hopper/config.toml # Main config file
-- .local/share/multimc/instances/*/.minecraft/Hopfile.toml # Multimc
-- .minecraft/Hopfile.toml # Official launcher
-- .var/app/com.mojang.Minecraft/.minecraft/Hopfile.toml # Flatpak version
-- .cache/hopper/ # Mod cache
-|              - hopper.lock # Lock file
-|              - mod1.jar # Mods
-|              - mod2.jar
-+------------- - ...
+```
+~/.hopper/
+├── hopper.conf
+├── cache/
+│   ├── 1.19.1/
+│   │ └── fabric
+│   └── 1.18.2/
+│     ├── forge
+│     └── plugin
+└── templates/
+      └── arbitrary.hop -> ~/.minecraft/mods/arbitrary.hop
 ```
 
-# Usage (Planned)
+# Hopfile Structure
 
-Create `Hopfile.toml` in your instance directory:
-```
-hopper init
-```
-
-Add mods:
-```
-hopper add iris
-hopper add sodium
-hopper add phosphor
-```
-
-Check for mod updates:
-```
-hopper update
-```
-
-# Docs (Planned)
-
-## `hopper init`
+Hopfiles will contain a Minecraft version number, a list of packages, the name
+of the type of package it uses, and any references to other templates it's based
+on. If a template is based on other templates, it inherits the packages from
+those templates. A template does not inherit the package or Minecraft version
+from another template.
 
 ```
-hopper init < --dir=./path/to/instance >
+template = abitrary
+
+mc-version = 1.19.2
+
+type = fabric
+
+[packages]
+sodium
 ```
 
-Inits in current directory if `dir` is left out, otherwise inits in given dir.
+# Hopper Configuration File Structure
 
-## `hopper update`
-
-```
-hopper update < --mc-version=1.17 >
-```
-
-Updates all installed mods of a specific version, or a version set in the config.
-
-## `hopper add`
+Hopper will maintain a list of all hopfiles known to hopper. Its config will
+also contain a list of mod hosting sites like Modrinth and CurseForge and a list
+of (remote or local) version-control repositories from which to compile mods.
+The latter will use a (potentially custom) build file format to be defined at a
+later date.
 
 ```
-$ hopper add sodium --mc-version 1.17
-4 Indium 1.0.0+mc1.17.1 [1.17.1] (21557 downloads)
-    Sodium addon providing support for the Fabric Rendering API, based on Indigo
-3 Reese's Sodium Options 1.2.1 [1.16.5] (548 downloads)
-    Alternative Options Menu for Sodium
-2 Sodium Extra mc1.17.1-0.3.6 [1.17.1] (16387 downloads)
-    Features that shouldn't be in Sodium.
-1 Sodium mc1.17.1-0.3.2 [1.17.1] (962361 downloads)
-    Modern rendering engine and client-side optimization mod for Minecraft
-:: Select a mod
-:: ...
+[hopfiles]
+file = ~/.minecraft/mods/1.19.1.hop
+
+# Mod Hosts
+
+[Modrinth]
+api = https://api.modrinth.com/
+
+[CurseForge]
+api = https://api.curseforge.com/
+
+# Git Repositories
+
+[Iris Shaders]
+source = git+https://github.com/IrisShaders/Iris.git
 ```
 
-## `hopper get`
+# Docs
 
-Just like `hopper add` but simply downloads a mod jar to the current directory.
+## Usage
+
+`hopper [SUBCOMMAND] [OPTIONS]`
+
+## Common OPTIONS:
+
+`-d`, `--dir[=FILE]`
+    Specifies the path for the hopfile being utilized
+
+`-f`, `--filename=[FILE]`
+    Saves to a specific file name.
+
+`-m`, `--mc-version[=VERSION]`
+    Specifies for what VERSION of Minecraft PACKAGES are being managed
+
+`-t`, `--type[=TYPE]`
+    Specifies what TYPE of PACKAGEs is being referenced
+
+`-v`, `--verbose`
+    Includes debug information in the output of `hopper` commands.
+
+## SUBCOMMANDs
+
+`get [OPTIONS] PACKAGE`
+    Searches for a PACKAGE, displays the results, and downloads any selected
+    PACKAGES to the local cache.
+
+OPTIONS
+    `-n`, `--no-confirm`
+        Does not display search results and downloads exact matches to the
+        cache. Requires `--mc-version` and `--type` be specified.
+
+`init [OPTIONS] [--mc-version=VERSION] [--type=TYPE] TEMPLATE`
+    Creates a hopfile in the current directory and adds it to the global known
+    hopfiles list in the configuration file. If a TEMPLATE is passed as an
+    argument, the hopfile is added as a new template. A name is generated using
+    the VERSION and TYPE specified unless `--filename` is used.
+
+OPTIONS
+    `--template[=TEMPLATE1,TEMPLATE2...]`
+        Specifies TEMPLATE hopfiles' names upon which to base the new hopfile.
+
+`install [OPTIONS] PACKAGE`
+    Adds a PACKAGE to the current hopfile and runs `hopper update`. If the
+    PACKAGE cannot be found in the package cache, it runs `hopper get` first.
+
+OPTIONS
+    `--template[=TEMPLATE1,TEMPLATE2...]`
+        Specifies a template hopfile to which to install mods
+
+`list [OPTIONS]`
+    Lists all installed packages.
+
+`update [OPTIONS] PACKAGE`
+    Updates installed PACKAGEs and adds mods if they're missing to directories
+    with known hopfiles. If a PACKAGE is passed, `--type` must be specified so
+    that hopper `update`s the correct package.
