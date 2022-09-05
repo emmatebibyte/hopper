@@ -21,16 +21,18 @@
 
 A Minecraft package manager for the terminal.
 
-Hopper can automatically search, download, and update Minecraft mods from
-https://modrinth.com/ so that keeping your mods up-to-date and compatible with
-each other is easy. With Hopper, you won't have to manually visit CurseForge and
-download each mod one-by-one every time you set up a new instance, or deal with
-the hassle of swapping out different mod versions for hours while trying to get
-Minecraft to accept them all at once.
+Hopper can automatically search, download, and update Minecraft mods, modpacks,
+resource packs, and plugins from [Modrinth](https://modrinth.com/) so that
+keeping your mods up-to-date and compatible with each other is easy. With
+Hopper, you won't have to manually visit [CurseForge](https://curseforge.com/)
+and download each mod one-by-one every time you set up a new instance, or deal
+with the hassle of swapping out different mod versions for hours while trying to
+get Minecraft to accept them all at once.
 
 Hopper is still very early in development, but important features are coming
 along smoothly, and we'll have lots of progress to show off in the coming weeks.
-It's written in Rust and released under the AGPLv3.
+It's written in [Rust](https://www.rust-lang.org/) and released under the
+[AGPLv3](LICENSE).
 
 We're looking for people to help contribute code and write documentation. Please
 reach out to us in [our Discord "server"](https://discord.gg/jJutHQjsh9) if
@@ -38,14 +40,11 @@ you're interested in helping out. If you have a taste in CLI apps like Hopper,
 your input is especially appreciated.
 
 Inspired by applications like [paru](https://github.com/morganamilo/paru), a
-feature-packed AUR helper and [topgrade](https://github.com/r-darwish/topgrade).
+feature-packed AUR helper and [topgrade](https://github.com/r-darwish/topgrade),
 a tool to upgrade everything
 
-# Donate
-
-<noscript><a
-href="https://liberapay.com/tebibytemedia/donate"><img alt="Donate using
-Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a></noscript>
+[![Donate using
+Liberapay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/tebibytemedia/donate)
 
 # High-level Goals
 
@@ -74,13 +73,14 @@ Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a></noscript>
 - `zsh(1)` autocomplete
 - [Nushell](https://www.nushell.sh/) autocomplete
 - Configurable search result display like [Starship](https://starship.rs)
+- Versioning system repository package management & compilation
 
 ## External-Dependent:
 - Conflict resolution
 - Dependency resolution
 - Integration into [PolyMC](https://polymc.org/) and/or
 [theseus](https://github.com/modrinth/theseus)
-- Integration into `togprade(1)`
+- Integration into `topgrade(1)`
 - Graphical frontend with notifications
 
 [Modrinth REST API
@@ -93,24 +93,24 @@ docs](https://docs.modrinth.com/api-spec/)
 ├── hopper.conf
 ├── cache/
 │   ├── 1.19.1/
-│   │ └── fabric
+│   │ └── fabric/
 │   └── 1.18.2/
-│     ├── forge
-│     └── plugin
+│     ├── forge/
+│     └── plugin/
 └── templates/
-      └── arbitrary.hop -> ~/.minecraft/mods/arbitrary.hop
+      └── example-template.hop -> ~/.minecraft/mods/example-template.hop
 ```
 
 # Hopfile Structure
 
 Hopfiles will contain a Minecraft version number, a list of packages, the name
-of the type of package it uses, and any references to other templates it's based
-on. If a template is based on other templates, it inherits the packages from
-those templates. A template does not inherit the package or Minecraft version
-from another template.
+of the type of package it uses, and any references to other hopfiles it's based
+on, or "templates". If a hopfile is based on other template hopfiles, it
+inherits the packages from them. A hopfile does not inherit the package or
+Minecraft version from a template.
 
 ```
-template = abitrary
+template = example-template
 
 mc-version = 1.19.2
 
@@ -122,11 +122,11 @@ sodium
 
 # Hopper Configuration File Structure
 
-Hopper will maintain a list of all hopfiles known to hopper. Its config will
-also contain a list of mod hosting sites like Modrinth and CurseForge and a list
-of (remote or local) version-control repositories from which to compile mods.
-The latter will use a (potentially custom) build file format to be defined at a
-later date.
+Hopper's configuration will be maintained with a list of all hopfiles known to
+hopper. Its config will also contain a list of mod hosting sites like Modrinth
+and CurseForge and a list of (remote or local) version-control repositories from
+which to compile mods. The latter will use a (potentially custom) build file
+format to be defined at a later date.
 
 ```
 [hopfiles]
@@ -154,19 +154,19 @@ source = git+https://github.com/IrisShaders/Iris.git
 
 ## Common OPTIONS:
 
-`-d`, `--dir[=FILE]`
+`-d`, `--dir [FILE]`
 
 &emsp;Specifies the path for the hopfile being utilized
 
-`-f`, `--filename=[FILE]`
+`-f`, `--filename [FILE]`
 
 &emsp;Saves to a specific file name.
 
-`-m`, `--mc-version[=VERSION]`
+`-m`, `--mc-version [VERSION]`
 
 &emsp;Specifies for what VERSION of Minecraft PACKAGES are being managed
 
-`-t`, `--type[=TYPE]`
+`-t`, `--type [TYPE]`
 
 &emsp;Specifies what TYPE of PACKAGEs is being referenced
 
@@ -188,7 +188,7 @@ OPTIONS
 &emsp;&emsp;Does not display search results and downloads exact matches to the
 cache. Requires `--mc-version` and `--type` be specified.
 
-`init [OPTIONS] [--mc-version=VERSION] [--type=TYPE] TEMPLATE`
+`init [OPTIONS] --mc-version VERSION --type TYPE TEMPLATE`
 
 &emsp;Creates a hopfile in the current directory and adds it to the global known
 hopfiles list in the configuration file. If a TEMPLATE is passed as an
@@ -197,7 +197,7 @@ using the VERSION and TYPE specified unless `--filename` is used.
 
 OPTIONS
 
-&emsp;`--template[=TEMPLATE1,TEMPLATE2...]`
+&emsp;`--template [TEMPLATE1,TEMPLATE2...]`
 
 &emsp;&emsp;Specifies TEMPLATE hopfiles' names upon which to base the new
 hopfile.
@@ -209,7 +209,7 @@ PACKAGE cannot be found in the package cache, it runs `hopper get` first.
 
 OPTIONS
 
-&emsp;`--template[=TEMPLATE1,TEMPLATE2...]`
+&emsp;`--template [TEMPLATE1,TEMPLATE2...]`
 
 &emsp;&emsp;Specifies a template hopfile to which to install mods
 
