@@ -1,10 +1,9 @@
-use structopt::StructOpt;
-
 mod api;
 mod client;
 mod config;
 
 use api::*;
+use clap::Parser;
 use client::*;
 use config::*;
 
@@ -112,7 +111,7 @@ async fn cmd_get(ctx: &AppContext, search_args: SearchArgs) -> anyhow::Result<()
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     env_logger::init();
-    let args = Args::from_args();
+    let args = Args::parse();
     let config = args.load_config()?;
     let ctx = AppContext { args, config };
     match ctx.args.to_owned().command {

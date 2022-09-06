@@ -1,51 +1,48 @@
+use clap::{Parser, Subcommand};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use structopt::StructOpt;
 
 // TODO parameter to restrict target Minecraft version
-#[derive(StructOpt, Clone, Debug)]
+#[derive(clap::Args, Clone, Debug)]
 pub struct SearchArgs {
     pub package_name: String,
 
     /// Restricts the target Minecraft version
-    #[structopt(short, long)]
+    #[clap(short, long)]
     pub version: Option<Vec<String>>,
 }
 
 // TODO use ColoredHelp by default?
-#[derive(StructOpt, Clone, Debug)]
+#[derive(Subcommand, Clone, Debug)]
 pub enum Command {
     /// Adds a mod to the current instance
-    #[structopt(setting = structopt::clap::AppSettings::ColoredHelp)]
     Add(SearchArgs),
     /// Removes a mod
-    #[structopt(setting = structopt::clap::AppSettings::ColoredHelp)]
-    Remove { package_name: String },
-    #[structopt(setting = structopt::clap::AppSettings::ColoredHelp)]
+    Remove {
+        package_name: String,
+    },
     Get(SearchArgs),
-    #[structopt(setting = structopt::clap::AppSettings::ColoredHelp)]
     Update,
-    #[structopt(setting = structopt::clap::AppSettings::ColoredHelp)]
     Clean,
 }
 
 // TODO move main body argument fields to substruct for ease of moving?
-#[derive(StructOpt, Clone, Debug)]
-#[structopt(name = "hopper", setting = structopt::clap::AppSettings::ColoredHelp)]
+#[derive(Parser, Clone, Debug)]
+#[clap(name = "hopper")]
 pub struct Args {
     /// Path to configuration file
-    #[structopt(short, long, parse(from_os_str))]
+    #[clap(short, long, value_parser)]
     pub config: Option<PathBuf>,
 
     /// Path to mod lockfile
-    #[structopt(short, long, parse(from_os_str))]
+    #[clap(short, long, value_parser)]
     pub lockfile: Option<PathBuf>,
 
     /// Auto-accept confirmation dialogues
-    #[structopt(short = "y", long = "yes")]
+    #[clap(short = 'y', long = "yes")]
     pub auto_accept: bool,
 
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     pub command: Command,
 }
 
