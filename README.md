@@ -168,7 +168,10 @@ source = git+https://github.com/IrisShaders/Iris.git
 
 `-t`, `--type [TYPE]`
 
-&emsp;Specifies what TYPE of PACKAGEs is being referenced
+&emsp;Specifies what TYPE of PACKAGEs is being referenced. TYPEs include
+modloader names like `fabric`, `forge`, and `quilt`, as well as `resource` packs
+and mod`pack`s.
+
 
 `-v`, `--verbose`
 
