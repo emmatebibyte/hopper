@@ -59,7 +59,7 @@ impl Args {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Upstream {
     /// Modrinth main server address
     pub server_address: String,
@@ -73,7 +73,7 @@ impl Default for Upstream {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Options {
     /// Whether to reverse search results
     pub reverse_search: bool,
@@ -87,7 +87,7 @@ impl Default for Options {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, Default)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone)]
 pub struct Config {
     /// General settings
     pub options: Options,
