@@ -24,14 +24,19 @@ impl HopperClient {
         let url = format!("https://{}/v2/search", self.config.upstream.server_address);
 
         let mut params = vec![("query", search_args.package_name.to_owned())];
+        let mut facets: Vec<String> = Vec::new();
         if let Some(versions) = &search_args.version {
             let versions_facets = versions
                 .iter()
                 .map(|e| format!("[\"versions:{}\"]", e))
                 .collect::<Vec<String>>()
                 .join(",");
-            params.push(("facets", format!("[{}]", versions_facets)));
+            facets.push(format!("{}", versions_facets));
         }
+        if let Some(package_type) = &search_args.package_type {
+            facets.push(format!("[\"project_type:{}\"]", package_type.to_string()));
+        }
+        params.push(("facets", format!("[{}]", facets.join(","))));
 
         let url = reqwest::Url::parse_with_params(url.as_str(), &params)?;
         info!("GET {}", url);
