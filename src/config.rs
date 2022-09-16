@@ -36,20 +36,14 @@ pub enum PackageType {
     Forge,
     Quilt,
     Resource,
-    Pack,
-}
-
-impl ToString for PackageType {
-    fn to_string(&self) -> String {
-        match self {
-            PackageType::Fabric => "fabric",
-            PackageType::Forge => "forge",
-            PackageType::Quilt => "quilt",
-            PackageType::Resource => "resourcepack",
-            PackageType::Pack => "modpack",
-        }
-        .to_string()
-    }
+    FabricPack,
+    ForgePack,
+    QuiltPack,
+    BukkitPlugin,
+    PaperPlugin,
+    PurpurPlugin,
+    SpigotPlugin,
+    SpongePlugin,
 }
 
 // TODO move main body argument fields to substruct for ease of moving?

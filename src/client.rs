@@ -1,5 +1,5 @@
 use crate::api::{ModInfo, ModResult, ModVersion, ModVersionFile, SearchResponse};
-use crate::config::{Args, Config, SearchArgs};
+use crate::config::{Args, Config, PackageType, SearchArgs};
 use futures_util::StreamExt;
 use log::*;
 use std::cmp::min;
@@ -34,7 +34,22 @@ impl HopperClient {
             facets.push(format!("{}", versions_facets));
         }
         if let Some(package_type) = &search_args.package_type {
-            facets.push(format!("[\"project_type:{}\"]", package_type.to_string()));
+            let package_type_facet = match package_type {
+                PackageType::Fabric => "[\"categories:fabric\"],[\"project_type:mod\"]",
+                PackageType::Forge => "[\"categories:forge\"],[\"project_type:mod\"]",
+                PackageType::Quilt => "[\"categories:quilt\"],[\"project_type:mod\"]",
+                PackageType::Resource => "[\"project_type:resourcepack\"]",
+                PackageType::FabricPack => "[\"project_type:modpack\"],[\"categories:fabric\"]",
+                PackageType::ForgePack => "[\"project_type:modpack\"],[\"categories:forge\"]",
+                PackageType::QuiltPack => "[\"project_type:modpack\"],[\"categories:quilt\"]",
+                PackageType::BukkitPlugin => "[\"project_type:mod\"],[\"categories:bukkit\"]",
+                PackageType::PaperPlugin => "[\"project_type:mod\"],[\"categories:paper\"]",
+                PackageType::PurpurPlugin => "[\"project_type:mod\"],[\"categories:purpur\"]",
+                PackageType::SpigotPlugin => "[\"project_type:mod\"],[\"categories:spigot\"]",
+                PackageType::SpongePlugin => "[\"project_type:mod\"],[\"categories:sponge\"]",
+            }
+            .to_string();
+            facets.push(package_type_facet);
         }
         params.push(("facets", format!("[{}]", facets.join(","))));
 
