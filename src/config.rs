@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
@@ -6,6 +6,10 @@ use std::path::PathBuf;
 #[derive(clap::Args, Clone, Debug)]
 pub struct SearchArgs {
     pub package_name: String,
+
+    /// Type of package to use
+    #[clap(short, long, value_enum)]
+    pub package_type: Option<PackageType>,
 
     /// Restricts the target Minecraft version
     #[clap(short, long)]
@@ -24,6 +28,22 @@ pub enum Command {
     Get(SearchArgs),
     Update,
     Clean,
+}
+
+#[derive(ValueEnum, Clone, Debug)]
+pub enum PackageType {
+    Fabric,
+    Forge,
+    Quilt,
+    Resource,
+    FabricPack,
+    ForgePack,
+    QuiltPack,
+    BukkitPlugin,
+    PaperPlugin,
+    PurpurPlugin,
+    SpigotPlugin,
+    SpongePlugin,
 }
 
 // TODO move main body argument fields to substruct for ease of moving?
