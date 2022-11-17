@@ -72,10 +72,10 @@ Liberapay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.c
 - Configurable search result display like [Starship](https://starship.rs)
 - Version-control system repository package management & compilation
 
-## External-Dependent:
+### External-Dependent:
 - Conflict resolution
 - Dependency resolution
-- Integration into [PolyMC](https://polymc.org/) and/or
+- Integration into [Prism Launcher](https://prismlauncher.org/) and/or
 [theseus](https://github.com/modrinth/theseus)
 - Integration into `topgrade(1)`
 - Graphical frontend with notifications
@@ -116,10 +116,10 @@ resource = "alacrity"
 # Hopper Configuration File Structure
 
 Hopper's configuration will be maintained with a list of all hopfiles known to
-hopper. Its config will also contain a list of mod hosting sites like Modrinth
-and CurseForge and a list of (remote or local) version-control repositories from
-which to compile mods. The latter will use a (potentially custom) build file
-format to be defined at a later date.
+hopper. Its config file will also contain a list of mod hosting sites like
+Modrinth and CurseForge and a list of (remote or local) version-control
+repositories from which to compile mods. The latter will use a (potentially
+custom) build file format to be defined at a later date.
 
 ```
 hopfiles = [
@@ -137,6 +137,29 @@ git = [
 ```
 
 # Docs
+
+## Types
+
+There are multiple types of packages hopper can manage.
+
+### Mods
+- `fabric-mod`
+- `forge-mod`
+- `quilt-mod`
+
+### Plugins
+- `bukkit-plugin`
+- `paper-plugin`
+- `spigot-plugin`
+
+### Other
+- `data-pack`
+- `fabric-pack`
+- `forge-pack`
+- `resource-pack`
+- `quilt-pack`
+
+These types are specified in various hopper subcommands and in its configuration.
 
 ## Usage
 
