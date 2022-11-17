@@ -150,7 +150,9 @@ There are multiple types of packages hopper can manage.
 ### Plugins
 - `bukkit-plugin`
 - `paper-plugin`
+- `purpur-plugin`
 - `spigot-plugin`
+- `sponge-plugin`
 
 ### Other
 - `data-pack`
