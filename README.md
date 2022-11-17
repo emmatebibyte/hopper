@@ -242,12 +242,11 @@ OPTIONS
 option creates a new file and symlink as it does not update the packages for
 other hopfiles.
 
-&emsp;`-t`, `--type [types...] [packages...]`
-
-&emsp;&emsp;Updates only packages of a specified type. Optionally takes a list
-of packages as an argument.
-
 &emsp;`-m`, `--mc-version [version]`
 
 &emsp;&emsp;Specifies for what version of Minecraft packages are being updated.
 
+&emsp;`-t`, `--type [types...] [packages...]`
+
+&emsp;&emsp;Updates only packages of a specified type. Optionally takes a list
+of packages as an argument.
