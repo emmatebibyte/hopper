@@ -68,12 +68,9 @@ Liberapay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.c
 - A `man(1)` entry
 
 ### Low Priority:
-- `fish(1)` autocomplete
-- `bash(1)` autocomplete
-- `zsh(1)` autocomplete
-- [Nushell](https://www.nushell.sh/) autocomplete
+- Shell autocomplete
 - Configurable search result display like [Starship](https://starship.rs)
-- Versioning system repository package management & compilation
+- Version-control system repository package management & compilation
 
 ## External-Dependent:
 - Conflict resolution
@@ -86,38 +83,34 @@ Liberapay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.c
 [Modrinth REST API
 docs](https://docs.modrinth.com/api-spec/)
 
-# File Architecture
+# File Structure
 
 ```
-~/.hopper/
-├── hopper.conf
-├── cache/
+├── "$XDG_CONFIG_HOME"/hopper.toml
+├── "$XDG_CACHE_HOME"/hopper/
 │   ├── 1.19.1/
 │   │ └── fabric/
 │   └── 1.18.2/
 │     ├── forge/
 │     └── plugin/
-└── templates/
+└── "XDG_DATA_HOME"/templates/
       └── example-template.hop -> ~/.minecraft/mods/example-template.hop
 ```
 
 # Hopfile Structure
 
-Hopfiles will contain a Minecraft version number, a list of packages, the name
-of the type of package it uses, and any references to other hopfiles it's based
-on, or "templates". If a hopfile is based on other template hopfiles, it
-inherits the packages from them. A hopfile does not inherit the package or
-Minecraft version from a template.
+Hopfiles will contain a Minecraft version number, a list of packages, and any 
+references to other hopfiles on which it's based, or "templates". If a hopfile
+is based on other template hopfiles, it inherits the packages from them. A
+hopfile does not inherit the package or Minecraft version from a template.
 
 ```
-template = example-template
-
-mc-version = 1.19.2
-
-type = fabric
+template = "example-template"
+mc-version = "1.19.2"
 
 [packages]
-sodium
+fabric-mod = [ "sodium", "lithium" ]
+resource = "alacrity"
 ```
 
 # Hopper Configuration File Structure
@@ -129,99 +122,131 @@ which to compile mods. The latter will use a (potentially custom) build file
 format to be defined at a later date.
 
 ```
-[hopfiles]
-file = ~/.minecraft/mods/1.19.1.hop
+hopfiles = [
+  "~/.minecraft/mods/template.hop",
+  "~/.minecraft/1.91.1/mods/1.19.1.hop" 
+]
 
-# Mod Hosts
-
-[Modrinth]
-api = https://api.modrinth.com/
-
-[CurseForge]
-api = https://api.curseforge.com/
-
-# Git Repositories
-
-[Iris Shaders]
-source = git+https://github.com/IrisShaders/Iris.git
+[sources]
+modrinth = "https://api.modrinth.com/"
+curseforge = "https://api.curseforge.com/"
+git = [
+  "git+https://github.com/IrisShaders/Iris.git"
+  "git+https://github.com/CaffeineMC/sodium-fabric.git"
+]
 ```
 
 # Docs
 
 ## Usage
 
-`hopper [SUBCOMMAND] [OPTIONS]`
+`hopper [options...] [subcommand...]`
 
-## Common OPTIONS:
-
-`-d`, `--dir [FILE]`
-
-&emsp;Specifies the path for the hopfile being utilized
-
-`-f`, `--filename [FILE]`
-
-&emsp;Saves to a specific file name.
-
-`-m`, `--mc-version [VERSION]`
-
-&emsp;Specifies for what VERSION of Minecraft PACKAGES are being managed
-
-`-t`, `--type [TYPE]`
-
-&emsp;Specifies what TYPE of PACKAGEs is being referenced. TYPEs include
-modloader names like `fabric`, `forge`, and `quilt`, as well as `resource` packs
-and mod`pack`s.
-
+## OPTIONS
 
 `-v`, `--verbose`
 
-&emsp;Includes debug information in the output of `hopper` commands.
+&emsp;Includes debug information in the output of `hopper` subcommands.
 
-## SUBCOMMANDs
+## SUBCOMMANDS
 
-`get [OPTIONS] PACKAGE`
+`get [options...] [targets...]`
 
-&emsp;Searches for a PACKAGE, displays the results, and downloads any selected
-PACKAGES to the local cache.
+&emsp;Searches for packages, displays the results, and downloads any selected
+packages to the local cache. If multiple targets are specified, results are
+displayed in order of specification.
 
-OPTIONS
+### OPTIONS
+
+&emsp;`-d`, `--dir [directory...]`
+
+&emsp;&emsp;Specifies the directory to download to (default is "$XDG_CACHE_HOME"/hopper/).
+
+&emsp;`-m`, `--mc-version [version...]`
+
+&emsp;&emsp;Specifies for what version of Minecraft packages are being retrieved.
 
 &emsp;`-n`, `--no-confirm`
 
 &emsp;&emsp;Does not display search results and downloads exact matches to the
 cache. Requires `--mc-version` and `--type` be specified.
 
-`init [OPTIONS] --mc-version VERSION --type TYPE TEMPLATE`
+&emsp;`-t`, `--type [types...]`
+
+&emsp;&emsp;Specifies what types of packages are being queried.
+
+`init [options...]`
 
 &emsp;Creates a hopfile in the current directory and adds it to the global known
-hopfiles list in the configuration file. If a TEMPLATE is passed as an
-argument, the hopfile is added as a new template. A name is generated
-using the VERSION and TYPE specified unless `--filename` is used.
+hopfiles list.
 
-OPTIONS
+### OPTIONS
 
-&emsp;`--template [TEMPLATE1,TEMPLATE2...]`
+&emsp;`-d`, `--dir [directory...]`
 
-&emsp;&emsp;Specifies TEMPLATE hopfiles' names upon which to base the new
-hopfile.
+&emsp;&emsp;Specifies the directory in which the hopfile is being created.
 
-`install [OPTIONS] PACKAGE`
+&emsp;`-f`, `--hopfile [hopfiles...]`
 
-&emsp;Adds a PACKAGE to the current hopfile and runs `hopper update`. If the
-PACKAGE cannot be found in the package cache, it runs `hopper get` first.
+&emsp;&emsp;Specifies templates upon which to base the new hopfile. Hopfile
+names should be comma-delineated.
 
-OPTIONS
+&emsp;`-m`, `--mc-version [version]`
 
-&emsp;`--template [TEMPLATE1,TEMPLATE2...]`
+&emsp;&emsp;Specifies for what version of Minecraft packages are being managed.
 
-&emsp;&emsp;Specifies a template hopfile to which to install mods
+&emsp;`-t`, `--type [type...]`
 
-`list [OPTIONS]`
+&emsp;&emsp;Specifies what type of packages will be listed in this hopfile.
+
+`install [options...] [packages...]`
+
+&emsp;Adds packages to the current hopfile, symlinking them to its directory. If
+the package cannot be found in the package cache, `hopper get` is run first.
+
+### OPTIONS
+
+&emsp; `-f`, `--hopfile [hopfiles...]`
+
+&emsp;&emsp;Specifies hopfiles to which mods will be added. Hopfile names and
+paths should be comma-delineated.
+
+`list [options...]`
 
 &emsp;Lists all installed packages.
 
-`update [OPTIONS] PACKAGE`
+### OPTIONS
 
-&emsp;Updates installed PACKAGEs and adds mods if they're missing to directories
-with known hopfiles. If a PACKAGE is passed, `--type` must be specified so that
-hopper `update`s the correct package.
+&emsp; `-f` `--hopfile [hopfiles...]`
+
+&emsp;&emsp;Lists packages installed in a specified hopfile.
+
+&emsp;`-m`, `--mc-version [version]`
+
+&emsp;&emsp;Specifies for what version of Minecraft packages are being managed.
+
+&emsp;`-t`, `--type [types...]`
+
+&emsp;&emsp;List all packages of a specified type.
+
+`update [options...]`
+
+&emsp;Updates installed packages and adds mods if they're missing to directories
+with known hopfiles.
+
+### OPTIONS
+
+&emsp;`-f`, `--hopfile [hopfiles...]`
+&emsp;&emsp;Updates only packages in the specified hopfile. Note that this
+option creates a new file and symlink as it does not update the packages for
+other hopfiles.
+
+&emsp;`-t`, `--type [types...] [packages...]`
+
+&emsp;&emsp;Updates only packages of a specified type. Optionally takes a list
+of packages as an argument.
+
+&emsp;`-m`, `--mc-version [version]`
+
+&emsp;&emsp;Specifies for what version of Minecraft packages are being updated.
+
