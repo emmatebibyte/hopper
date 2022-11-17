@@ -237,6 +237,7 @@ with known hopfiles.
 OPTIONS
 
 &emsp;`-f`, `--hopfile [hopfiles...]`
+
 &emsp;&emsp;Updates only packages in the specified hopfile. Note that this
 option creates a new file and symlink as it does not update the packages for
 other hopfiles.
