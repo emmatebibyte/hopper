@@ -156,7 +156,7 @@ git = [
 packages to the local cache. If multiple targets are specified, results are
 displayed in order of specification.
 
-### OPTIONS
+OPTIONS
 
 &emsp;`-d`, `--dir [directory...]`
 
@@ -180,7 +180,7 @@ cache. Requires `--mc-version` and `--type` be specified.
 &emsp;Creates a hopfile in the current directory and adds it to the global known
 hopfiles list.
 
-### OPTIONS
+OPTIONS
 
 &emsp;`-d`, `--dir [directory...]`
 
@@ -204,7 +204,7 @@ names should be comma-delineated.
 &emsp;Adds packages to the current hopfile, symlinking them to its directory. If
 the package cannot be found in the package cache, `hopper get` is run first.
 
-### OPTIONS
+OPTIONS
 
 &emsp; `-f`, `--hopfile [hopfiles...]`
 
@@ -215,7 +215,7 @@ paths should be comma-delineated.
 
 &emsp;Lists all installed packages.
 
-### OPTIONS
+OPTIONS
 
 &emsp; `-f` `--hopfile [hopfiles...]`
 
@@ -234,7 +234,7 @@ paths should be comma-delineated.
 &emsp;Updates installed packages and adds mods if they're missing to directories
 with known hopfiles.
 
-### OPTIONS
+OPTIONS
 
 &emsp;`-f`, `--hopfile [hopfiles...]`
 &emsp;&emsp;Updates only packages in the specified hopfile. Note that this
