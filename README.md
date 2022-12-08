@@ -185,11 +185,13 @@ OPTIONS
 
 &emsp;`-d`, `--dir [directory...]`
 
-&emsp;&emsp;Specifies the directory to download to (default is "$XDG_CACHE_HOME"/hopper/).
+&emsp;&emsp;Specifies the directory to download to (default is
+"$XDG_CACHE_HOME"/hopper/).
 
 &emsp;`-m`, `--mc-version [version...]`
 
-&emsp;&emsp;Specifies for what version of Minecraft packages are being retrieved.
+&emsp;&emsp;Specifies for what version of Minecraft packages are being
+retrieved.
 
 &emsp;`-n`, `--no-confirm`
 
@@ -213,8 +215,7 @@ OPTIONS
 
 &emsp;`-f`, `--hopfile [hopfiles...]`
 
-&emsp;&emsp;Specifies templates upon which to base the new hopfile. Hopfile
-names should be comma-delineated.
+&emsp;&emsp;Specifies templates upon which to base the new hopfile.
 
 &emsp;`-m`, `--mc-version [version]`
 
