@@ -234,8 +234,7 @@ OPTIONS
 
 &emsp; `-f`, `--hopfile [hopfiles...]`
 
-&emsp;&emsp;Specifies hopfiles to which mods will be added. Hopfile names and
-paths should be comma-delineated.
+&emsp;&emsp;Specifies hopfiles to which mods will be added.
 
 `list [options...]`
 
