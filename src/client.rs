@@ -14,7 +14,10 @@ impl HopperClient {
     pub fn new(config: Config) -> Self {
         Self {
             config: config,
-            client: reqwest::Client::new(),
+            client: reqwest::ClientBuilder::new()
+                .user_agent(format!("tebibytemedia/hopper/{} (tebibyte.media)", env!("CARGO_PKG_VERSION")))
+                .build()
+                .unwrap(),
         }
     }
 
