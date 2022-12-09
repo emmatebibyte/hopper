@@ -1,6 +1,6 @@
 use console::style;
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt};
 
 #[derive(Deserialize, Debug)]
 pub struct SearchResponse {
@@ -140,3 +140,17 @@ pub struct ModVersionFile {
     pub primary: bool,
     pub size: isize,
 }
+
+#[derive(Deserialize, Debug)]
+pub struct Error {
+    pub error: String,
+    pub description: String,
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}: {}", self.error, self.description)
+    }
+}
+
+impl std::error::Error for Error {}

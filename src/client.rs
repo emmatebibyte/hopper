@@ -1,4 +1,4 @@
-use crate::api::{ModInfo, ModResult, ModVersion, ModVersionFile, SearchResponse};
+use crate::api::{ModInfo, ModResult, ModVersion, ModVersionFile, SearchResponse, Error as APIError};
 use crate::config::{Args, Config, PackageType, SearchArgs};
 use futures_util::StreamExt;
 use log::*;
@@ -55,14 +55,13 @@ impl HopperClient {
 
         let url = reqwest::Url::parse_with_params(url.as_str(), &params)?;
         info!("GET {}", url);
-        let response = self
-            .client
-            .get(url)
-            .send()
-            .await?
-            .json::<SearchResponse>()
-            .await?;
-        Ok(response)
+        let response = self.client.get(url).send().await?;
+
+        if response.status().is_success() {
+            Ok(response.json::<SearchResponse>().await?)
+        } else {
+            Err(response.json::<APIError>().await?.into())
+        }
     }
 
     pub async fn fetch_mod_info(&self, mod_result: &ModResult) -> anyhow::Result<ModInfo> {
@@ -78,8 +77,12 @@ impl HopperClient {
         );
         info!("GET {}", url);
         let response = self.client.get(url).send().await?;
-        let response = response.json::<ModInfo>().await?;
-        Ok(response)
+
+        if response.status().is_success() {
+            Ok(response.json::<ModInfo>().await?)
+        } else {
+            Err(response.json::<APIError>().await?.into())
+        }
     }
 
     pub async fn fetch_mod_version(&self, version_id: &String) -> anyhow::Result<ModVersion> {
@@ -91,8 +94,12 @@ impl HopperClient {
         );
         info!("GET {}", url);
         let response = self.client.get(url).send().await?;
-        let response = response.json::<ModVersion>().await?;
-        Ok(response)
+
+        if response.status().is_success() {
+            Ok(response.json::<ModVersion>().await?)
+        } else {
+            Err(response.json::<APIError>().await?.into())
+        }
     }
 
     pub async fn download_version_file(
@@ -119,6 +126,11 @@ impl HopperClient {
         let url = &file.url;
         info!("GET {}", url);
         let response = self.client.get(url).send().await?;
+
+        if !response.status().is_success() {
+            return Err(response.json::<APIError>().await?.into())
+        }
+
         let total_size = response.content_length().unwrap();
 
         // TODO better colors and styling!
