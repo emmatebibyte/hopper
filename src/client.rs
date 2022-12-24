@@ -54,7 +54,10 @@ impl HopperClient {
             .to_string();
             facets.push(package_type_facet);
         }
-        params.push(("facets", format!("[{}]", facets.join(","))));
+
+        if !facets.is_empty() {
+            params.push(("facets", format!("[{}]", facets.join(","))));
+        }
 
         let url = reqwest::Url::parse_with_params(url.as_str(), &params)?;
         info!("GET {}", url);
