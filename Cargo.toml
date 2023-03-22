@@ -3,18 +3,22 @@ name = "hopper"
 version = "0.1.0"
 license = "AGPL-3.0-or-later"
 edition = "2021"
+authors = [
+	"Emma Tebibyte <emma@tebibyte.media>",
+	"Marceline Cramer <mars@tebibyte.media>"
+]
 
 [dependencies]
-anyhow = "1.0"
-confy = "0.4"
+arg = "0.4.1"
+c-main = "1.0.1"
 console = "0.15.0"
+curl = "0.4.44"
 dialoguer = "0.9.0"
-env_logger = "0.9.0"
 futures-util = "0.3.18"
 indicatif = "0.15.0"
-log = "0.4.14"
-reqwest = { version = "0.11", features = ["json", "stream"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-clap = { version = "3.2.20", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
+toml = "0.7.3"
+xdg = "2.4.1"
+yacexits = "0.1.3"

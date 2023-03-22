@@ -1,119 +1,91 @@
-use clap::{Parser, Subcommand, ValueEnum};
-use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+/*
+ * Copyright (c) 2022–2023 Emma Tebibyte <emma@tebibyte.media>
+ * Copyright (c) 2021–2022 Marceline Cramer <mars@tebibyte.media>
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Hopper.
+ *
+ * Hopper is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * Hopper is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License along with
+ * Hopper. If not, see <https://www.gnu.org/licenses/>.
+ */
 
-// TODO parameter to restrict target Minecraft version
-#[derive(clap::Args, Clone, Debug)]
-pub struct SearchArgs {
-    pub package_name: String,
+use std::{
+    collections::HashMap,
+    fs::File,
+    io::Read,
+};
 
-    /// Type of package to use
-    #[clap(short, long, value_enum)]
-    pub package_type: Option<PackageType>,
+use serde::Deserialize;
+use toml::de::ValueDeserializer;
+use yacexits::{
+    EX_DATAERR,
+    EX_UNAVAILABLE,
+};
 
-    /// Restricts the target Minecraft version
-    #[clap(short, long)]
-    pub version: Option<Vec<String>>,
-}
-
-// TODO use ColoredHelp by default?
-#[derive(Subcommand, Clone, Debug)]
-pub enum Command {
-    /// Adds a mod to the current instance
-    Add(SearchArgs),
-    /// Removes a mod
-    Remove {
-        package_name: String,
-    },
-    Get(SearchArgs),
-    Update,
-    Clean,
-}
-
-#[derive(ValueEnum, Clone, Debug)]
-pub enum PackageType {
-    Fabric,
-    Forge,
-    Quilt,
-    Resource,
-    FabricPack,
-    ForgePack,
-    QuiltPack,
-    BukkitPlugin,
-    PaperPlugin,
-    PurpurPlugin,
-    SpigotPlugin,
-    SpongePlugin,
-}
-
-// TODO move main body argument fields to substruct for ease of moving?
-#[derive(Parser, Clone, Debug)]
-#[clap(name = "hopper")]
-pub struct Args {
-    /// Path to configuration file
-    #[clap(short, long, value_parser)]
-    pub config: Option<PathBuf>,
-
-    /// Path to mod lockfile
-    #[clap(short, long, value_parser)]
-    pub lockfile: Option<PathBuf>,
-
-    /// Auto-accept confirmation dialogues
-    #[clap(short = 'y', long = "yes")]
-    pub auto_accept: bool,
-
-    #[clap(subcommand)]
-    pub command: Command,
-}
-
-impl Args {
-    pub fn load_config(&self) -> Result<Config, confy::ConfyError> {
-        if let Some(config_path) = &self.config {
-            confy::load_path(config_path)
-        } else {
-            confy::load("hopper")
-        }
-    }
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone)]
-pub struct Upstream {
-    /// Modrinth main server address
-    pub server_address: String,
-}
-
-impl Default for Upstream {
-    fn default() -> Self {
-        Self {
-            server_address: "api.modrinth.com".into(),
-        }
-    }
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone)]
-pub struct Options {
-    /// Whether to reverse search results
-    pub reverse_search: bool,
-}
-
-impl Default for Options {
-    fn default() -> Self {
-        Self {
-            reverse_search: true,
-        }
-    }
-}
-
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize)]
 pub struct Config {
-    /// General settings
-    pub options: Options,
-
-    /// Configuration for the upstream Modrinth server
-    pub upstream: Upstream,
+    hopfiles: Vec<String>,
+    sources: HashMap<String, String>,
 }
 
-pub struct AppContext {
-    pub args: Args,
-    pub config: Config,
+pub fn get_config() -> Result<(), (String, u32)> {
+    let xdg_dirs = match xdg::BaseDirectories::with_prefix("hopper") {
+        Ok(dirs) => dirs,
+        Err(err) => {
+            return Err((
+                format!("{:?}", err),
+                EX_UNAVAILABLE,
+            ));
+        },
+    };
+    Ok(())
+}
+
+impl Config {
+    pub fn read_config(config_path: String) -> Result<Self, (String, u32)> {
+        let mut buf: Vec<u8> = Vec::new();
+
+        let mut config_file = match File::open(&config_path) {
+            Ok(file) => file,
+            Err(_) => {
+                return Err((
+                    format!("{}: Permission denied.", &config_path),
+                    EX_UNAVAILABLE,
+                ));
+            },
+        };
+
+        match config_file.read_to_end(&mut buf) {
+            Ok(_) => {},
+            Err(err) => {
+                return Err((
+                    format!("{:?}", err),
+                    EX_DATAERR,
+                ));
+            },
+        };
+
+        let toml = match String::from_utf8(buf) {
+            Ok(contents) => contents,
+            Err(_) => {
+                return Err((
+                    format!("Invalid configuration file."),
+                    EX_DATAERR,
+                ));
+            },
+        };
+
+        match Config::deserialize(ValueDeserializer::new(&toml)) {
+            Ok(val) => Ok(val),
+            Err(err) => Err((format!("{:?}", err), EX_DATAERR)),
+        }
+    }
 }
