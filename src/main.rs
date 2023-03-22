@@ -32,5 +32,5 @@ use config::*;
 #[tokio::main]
 #[no_mangle]
 async fn rust_main(args: c_main::Args) {
-    let argv: Vec<&str> = args.into_iter().collect();
+    let arguments = Arguments::from_args(args.into_iter());
 }

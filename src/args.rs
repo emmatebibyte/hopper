@@ -19,63 +19,63 @@
 
 use core::str::FromStr;
 
-use arg::Args;
+pub use arg::Args;
 
 #[derive(Args, Debug)]
-struct Arguments {
+pub struct Arguments {
     #[arg(short = "v")]
-    v: bool,
+    pub v: bool,
     
     #[arg(sub)]
-    sub: Command,
+    pub sub: Command,
 }
 
 #[derive(Args, Debug)]
-struct InitArgs {
+pub struct InitArgs {
     #[arg(short = "d")]
-    dir: Option<String>,
+    pub dir: Option<String>,
 
     #[arg(short = "f")]
-    template: Option<String>,
+    pub template: Option<String>,
 
     #[arg(short = "m")]
-    mc_version: Vec<String>,
+    pub mc_version: Vec<String>,
     
     #[arg(short = "t", required)]
-    package_type: PackageType,
+    pub package_type: PackageType,
 }
 
 #[derive(Args, Debug)]
-struct HopArgs {
+pub struct HopArgs {
     #[arg(short = "f")]
-    hopfile: Option<String>,
+    pub hopfile: Option<String>,
 
     #[arg(short = "m")]
-    mc_version: Vec<String>,
+    pub mc_version: Vec<String>,
 
     #[arg(short = "t")]
-    package_type: Option<PackageType>,
+    pub package_type: Option<PackageType>,
 }
 
 #[derive(Args, Debug)]
-struct SearchArgs {
-    package_name: String,
+pub struct SearchArgs {
+    pub package_name: String,
 
     /// Overrides the download directory
     #[arg(short = "d")]
-    dir: Option<String>,
+    pub dir: Option<String>,
 
     /// Restricts the target Minecraft version
     #[arg(short = "m")]
-    mc_version: Vec<String>,
+    pub mc_version: Vec<String>,
 
     /// Type of package to use
     #[arg(short = "t")]
-    package_type: Option<PackageType>,
+    pub package_type: Option<PackageType>,
 }
 
 #[derive(Args, Debug)]
-enum Command {
+pub enum Command {
     Add(SearchArgs),
     Get(SearchArgs),
     Init(InitArgs),
@@ -85,7 +85,7 @@ enum Command {
 }
 
 #[derive(Debug)]
-enum PackageType {
+pub enum PackageType {
     Mod(Loader),
     Pack(Loader),
     Plugin(Server),
@@ -93,14 +93,14 @@ enum PackageType {
 }
 
 #[derive(Debug)]
-enum Loader { 
+pub enum Loader { 
     Fabric,
     Forge,
     Quilt,
 }
 
 #[derive(Debug)]
-enum Server {
+pub enum Server {
     Bukkit,
     Paper,
     Purpur,
@@ -109,7 +109,7 @@ enum Server {
 }
 
 #[derive(Debug)]
-enum PackageParseError {
+pub enum PackageParseError {
     Invalid(String),
 }
 
