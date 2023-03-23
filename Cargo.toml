@@ -4,6 +4,7 @@ version = "0.1.0"
 license = "AGPL-3.0-or-later"
 edition = "2021"
 authors = [
+	"[ ] <https://git.tebibyte.media/BlankParenthesis/>"
 	"Emma Tebibyte <emma@tebibyte.media>",
 	"Marceline Cramer <mars@tebibyte.media>",
 	"Spookdot <https://git.tebibyte.media/spookdot/>",
