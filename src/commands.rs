@@ -18,6 +18,9 @@
  * Hopper. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use tokio::fs::File;
+use tokio::io::AsyncWriteExt;
+
 pub async fn cmd_get(
     ctx: &AppContext,
     search_args: SearchArgs
