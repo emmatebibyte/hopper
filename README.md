@@ -25,36 +25,36 @@ Hopper can automatically search, download, and update Minecraft mods, modpacks,
 resource packs, and plugins from [Modrinth](https://modrinth.com/) so that
 keeping your mods up-to-date and compatible with each other is easy. With
 Hopper, you won't have to manually visit [CurseForge](https://curseforge.com/)
-and download each mod one-by-one every time you set up a new instance, or deal
+and download each mod one by one every time you set up a new instance or deal
 with the hassle of swapping out different mod versions for hours while trying to
 get Minecraft to accept them all at once.
 
 Hopper is still very early in development, but important features are coming
 along smoothly, and we'll have lots of progress to show off in the coming weeks.
-It's written in [Rust](https://www.rust-lang.org/) and released under the
-[AGPLv3](LICENSE).
+It’s written in [Rust](https://www.rust-lang.org/) and released under the
+[GNU AGPLv3](https://www.gnu.org/licenses/agpl-3.0.en.html).
 
-We're looking for people to help contribute code and write documentation. Please
-reach out to us in [our Discord "server"](https://discord.gg/jJutHQjsh9) if
-you're interested in helping out. If you have a taste in CLI apps like Hopper,
+We’re looking for people to help contribute code and write documentation. Please
+reach out to us in [our Discord “server”](https://discord.gg/jJutHQjsh9) if
+you’re interested in helping out. If you have a taste in CLI apps like Hopper,
 your input is especially appreciated.
 
 Inspired by applications like [paru](https://github.com/morganamilo/paru), a
 feature-packed AUR helper and [topgrade](https://github.com/r-darwish/topgrade),
-a tool to upgrade everything
+a tool to upgrade everything.
 
 [![Donate using
 Liberapay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/tebibytemedia/donate)
 
-# High-level Goals
+## High-level Goals
 
-## Continuous
+### Continuous
 - Small binary size
 - Minimal compile times
 
-## Features
+### Features
 
-### High Priority:
+High Priority:
 - Modrinth package searching
 - Modrinth package installation
 - Parallel package downloading
@@ -62,17 +62,17 @@ Liberapay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.c
 - Package updating
 - Listing installed packages
 
-### Medium Priority
+Medium Priority
 - CurseForge package searching
 - CurseForge package installation
 - A `man(1)` entry
 
-### Low Priority:
+Low Priority:
 - Shell autocomplete
 - Configurable search result display like [Starship](https://starship.rs)
 - Version-control system repository package management & compilation
 
-### External-Dependent:
+External-Dependent:
 - Conflict resolution
 - Dependency resolution
 - Integration into [Prism Launcher](https://prismlauncher.org/) and/or
@@ -81,26 +81,26 @@ Liberapay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.c
 - Graphical frontend with notifications
 
 [Modrinth REST API
-docs](https://docs.modrinth.com/api-spec/)
+documentation](https://docs.modrinth.com/api-spec/)
 
 # File Structure
 
 ```
 ├── "$XDG_CONFIG_HOME"/hopper.toml
-├── "$XDG_CACHE_HOME"/hopper/
+├── "$XDG_DATA_HOME"/hopper/
 │   ├── 1.19.1/
 │   │ └── fabric/
 │   └── 1.18.2/
 │     ├── forge/
 │     └── plugin/
-└── "XDG_DATA_HOME"/templates/
+└── "$XDG_DATA_HOME"/templates/
       └── example-template.hop -> ~/.minecraft/mods/example-template.hop
 ```
 
 # Hopfile Structure
 
 Hopfiles will contain a Minecraft version number, a list of packages, and any 
-references to other hopfiles on which it's based, or "templates". If a hopfile
+references to other hopfiles on which it’s based, or “templates”. If a hopfile
 is based on other template hopfiles, it inherits the packages from them. A
 hopfile does not inherit the package or Minecraft version from a template.
 
@@ -115,7 +115,7 @@ resource = "alacrity"
 
 # Hopper Configuration File Structure
 
-Hopper's configuration will be maintained with a list of all hopfiles known to
+Hopper’s configuration will be maintained with a list of all hopfiles known to
 hopper. Its config file will also contain a list of mod hosting sites like
 Modrinth and CurseForge and a list of (remote or local) version-control
 repositories from which to compile mods. The latter will use a (potentially
@@ -136,46 +136,64 @@ git = [
 ]
 ```
 
-# Docs
+## Documentation
 
-## Types
+### Types
 
 There are multiple types of packages hopper can manage.
 
-### Mods
+#### Mods
 - `fabric-mod`
 - `forge-mod`
 - `quilt-mod`
 
-### Plugins
+#### Modpacks
+- `fabric-pack`
+- `forge-pack`
+- `quilt-pack`
+
+#### Plugins
 - `bukkit-plugin`
 - `paper-plugin`
 - `purpur-plugin`
 - `spigot-plugin`
 - `sponge-plugin`
 
-### Other
-- `data-pack`
-- `fabric-pack`
-- `forge-pack`
+#### Other
+- `data-pack` (planned)
 - `resource-pack`
-- `quilt-pack`
 
-These types are specified in various hopper subcommands and in its configuration.
+These types are specified in various hopper subcommands and in its
+configuration.
 
-## Usage
+### Usage
 
 `hopper [options...] [subcommand...]`
 
-## OPTIONS
+### Options
 
 `-v`, `--verbose`
 
 &emsp;Includes debug information in the output of `hopper` subcommands.
 
-## SUBCOMMANDS
+## Subcommands
 
-`get [options...] [targets...]`
+### `add [options...] [packages...]`
+
+&emsp;Adds packages to the current hopfile, symlinking them to its directory. If
+the package cannot be found in the package cache, `hopper get` is run first.
+
+OPTIONS
+
+&emsp; `-f`, `--hopfile [hopfiles...]`
+
+&emsp;&emsp;Specifies hopfiles to which mods will be added.
+
+&emsp;`-m`, `--mc-version [version...]`
+
+&emsp;&emsp;Overrides the version of Minecraft added packages will be for.
+
+### `get [options...] [targets...]`
 
 &emsp;Searches for packages, displays the results, and downloads any selected
 packages to the local cache. If multiple targets are specified, results are
@@ -186,7 +204,7 @@ OPTIONS
 &emsp;`-d`, `--dir [directory...]`
 
 &emsp;&emsp;Specifies the directory to download to (default is
-"$XDG_CACHE_HOME"/hopper/).
+`"$XDG_DATA_HOME"/hopper/`).
 
 &emsp;`-m`, `--mc-version [version...]`
 
@@ -202,7 +220,7 @@ cache. Requires `--mc-version` and `--type` be specified.
 
 &emsp;&emsp;Specifies what types of packages are being queried.
 
-`init [options...]`
+### `init [options...]`
 
 &emsp;Creates a hopfile in the current directory and adds it to the global known
 hopfiles list.
@@ -217,26 +235,16 @@ OPTIONS
 
 &emsp;&emsp;Specifies templates upon which to base the new hopfile.
 
-&emsp;`-m`, `--mc-version [version]`
+&emsp;`-m`, `--mc-version [version...]`
 
-&emsp;&emsp;Specifies for what version of Minecraft packages are being managed.
+&emsp;&emsp;Specifies the version of Minecraft packages are being managed for.
 
 &emsp;`-t`, `--type [type...]`
 
 &emsp;&emsp;Specifies what type of packages will be listed in this hopfile.
 
-`install [options...] [packages...]`
 
-&emsp;Adds packages to the current hopfile, symlinking them to its directory. If
-the package cannot be found in the package cache, `hopper get` is run first.
-
-OPTIONS
-
-&emsp; `-f`, `--hopfile [hopfiles...]`
-
-&emsp;&emsp;Specifies hopfiles to which mods will be added.
-
-`list [options...]`
+### `list [options...]`
 
 &emsp;Lists all installed packages.
 
@@ -246,7 +254,7 @@ OPTIONS
 
 &emsp;&emsp;Lists packages installed in a specified hopfile.
 
-&emsp;`-m`, `--mc-version [version]`
+&emsp;`-m`, `--mc-version [version...]`
 
 &emsp;&emsp;Specifies for what version of Minecraft packages are being managed.
 
@@ -254,22 +262,40 @@ OPTIONS
 
 &emsp;&emsp;List all packages of a specified type.
 
-`update [options...]`
+### `remove [options...] [packages...]`
 
-&emsp;Updates installed packages and adds mods if they're missing to directories
-with known hopfiles.
+&emsp;Uninstalls packages.
 
 OPTIONS
 
 &emsp;`-f`, `--hopfile [hopfiles...]`
 
-&emsp;&emsp;Updates only packages in the specified hopfile. Note that this
-option creates a new file and symlink as it does not update the packages for
-other hopfiles.
+&emsp;&emsp;Removes only packages in the specified hopfile.
 
 &emsp;`-m`, `--mc-version [version]`
 
-&emsp;&emsp;Specifies for what version of Minecraft packages are being updated.
+&emsp;&emsp;Specifies the version of Minecraft the packages are being
+uninstalled for.
+
+&emsp;`-t`, `--type [types...] [packages...]`
+
+&emsp;&emsp;Removes only packages of a specified type. Optionally takes a list
+of packages as an argument.
+
+### `update [options...]`
+
+&emsp;Updates installed packages. This command also adds mods to directories
+with known hopfiles if the hopfile lists a mod which is not present.
+
+OPTIONS
+
+&emsp;`-f`, `--hopfile [hopfiles...]`
+
+&emsp;&emsp;Updates only packages in the specified hopfile.
+
+&emsp;`-m`, `--mc-version [version...]`
+
+&emsp;&emsp;Specifies the version of Minecraft packages are being updated for.
 
 &emsp;`-t`, `--type [types...] [packages...]`
 
