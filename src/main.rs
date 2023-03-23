@@ -38,6 +38,11 @@ use yacexits::{
     EX_UNAVAILABLE,
 };
 
+struct AppContext {
+    args: Arguments,
+    config: Config,
+}
+
 #[tokio::main]
 #[no_mangle]
 async fn rust_main(args: c_main::Args) {
@@ -66,6 +71,8 @@ async fn rust_main(args: c_main::Args) {
             exit(code);
         },
     };
+
+    let ctx = AppContext { args, config };
 
     match ctx.arguments.command {
         // Command::Get(search_args) => cmd_get(&ctx, search_args).await,

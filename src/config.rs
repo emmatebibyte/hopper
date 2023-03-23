@@ -40,7 +40,7 @@ pub struct Config {
 }
 
 pub fn get_config(dirs: BaseDirectories) -> Result<PathBuf, (String, u32)> {
-    match dirs.place_config_file("config.toml") {
+    match dirs.place_config_file("hopper.toml") {
         Ok(file) => Ok(file),
         Err(_) => {
             Err((
