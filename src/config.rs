@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2022–2023 Emma Tebibyte <emma@tebibyte.media>
  * Copyright (c) 2021–2022 Marceline Cramer <mars@tebibyte.media>
+ * Copyright (c) 2022–2023 Emma Tebibyte <emma@tebibyte.media>
  * Copyright (c) 2022 Spookdot <https://git.tebibyte.media/spookdot/>
  * SPDX-License-Identifier: AGPL-3.0-or-later
  *
@@ -22,10 +22,12 @@ use std::{
     collections::HashMap,
     fs::File,
     io::Read,
+    path::PathBuf,
 };
 
 use serde::Deserialize;
 use toml::de::ValueDeserializer;
+use xdg::BaseDirectories;
 use yacexits::{
     EX_DATAERR,
     EX_UNAVAILABLE,
@@ -33,32 +35,38 @@ use yacexits::{
 
 #[derive(Deserialize)]
 pub struct Config {
-    hopfiles: Vec<String>,
-    sources: HashMap<String, String>,
+    pub hopfiles: Vec<String>,
+    pub sources: HashMap<String, String>,
 }
 
-pub fn get_config() -> Result<(), (String, u32)> {
-    let xdg_dirs = match xdg::BaseDirectories::with_prefix("hopper") {
-        Ok(dirs) => dirs,
-        Err(err) => {
-            return Err((
-                format!("{:?}", err),
+pub fn get_config(dirs: BaseDirectories) -> Result<PathBuf, (String, u32)> {
+    match dirs.place_config_file("config.toml") {
+        Ok(file) => Ok(file),
+        Err(_) => {
+            Err((
+                format!("Unable to create configuration file."),
                 EX_UNAVAILABLE,
-            ));
+            ))
         },
-    };
-    Ok(())
+    }
 }
 
 impl Config {
-    pub fn read_config(config_path: String) -> Result<Self, (String, u32)> {
+    pub fn read_config(config_path: PathBuf) -> Result<Self, (String, u32)> {
         let mut buf: Vec<u8> = Vec::new();
 
         let mut config_file = match File::open(&config_path) {
             Ok(file) => file,
             Err(_) => {
                 return Err((
-                    format!("{}: Permission denied.", &config_path),
+                    format!(
+                        "{}: Permission denied.",
+                        config_path
+                            .clone()
+                            .into_os_string()
+                            .into_string()
+                            .unwrap()
+                    ),
                     EX_UNAVAILABLE,
                 ));
             },

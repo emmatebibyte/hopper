@@ -1,7 +1,8 @@
 /*
- * Copyright (c) 2022–2023 Emma Tebibyte <emma@tebibyte.media>
  * Copyright (c) 2021–2022 Marceline Cramer <mars@tebibyte.media>
+ * Copyright (c) 2022–2023 Emma Tebibyte <emma@tebibyte.media>
  * Copyright (c) 2022 Spookdot <https://git.tebibyte.media/spookdot/>
+ * Copyright (c) 2022 [ ] <https://git.tebibyte.media/BlankParenthesis/>
  * SPDX-License-Identifier: AGPL-3.0-or-later
  *
  * This file is part of Hopper.
@@ -24,14 +25,51 @@ mod api;
 mod args;
 mod client;
 mod config;
+mod hopfile;
 
 use api::*;
 use args::*;
 use client::*;
 use config::*;
+use hopfile::*;
+
+use yacexits::{
+    exit,
+    EX_UNAVAILABLE,
+};
 
 #[tokio::main]
 #[no_mangle]
 async fn rust_main(args: c_main::Args) {
     let arguments = Arguments::from_args(args.into_iter());
+
+    let xdg_dirs = match xdg::BaseDirectories::with_prefix("hopper") {
+        Ok(dirs) => dirs,
+        Err(err) => {
+            eprintln!("{:?}", err);
+            exit(EX_UNAVAILABLE);
+        },
+    };
+
+    let config_path = match get_config(xdg_dirs) {
+        Ok(path) => path,
+        Err((err, code)) => {
+            eprintln!("{:?}", err);
+            exit(code);
+        },
+    };
+
+    let config = match Config::read_config(config_path) {
+        Ok(file) => file,
+        Err((err, code)) => {
+            eprintln!("{:?}", err);
+            exit(code);
+        },
+    };
+
+    match ctx.arguments.command {
+        // Command::Get(search_args) => cmd_get(&ctx, search_args).await,
+        // Command::Init(hopfile_args) => cmd_init(hopfile_args).await,
+        _ => unimplemented!("unimplemented subcommand"),
+    };
 }
