@@ -85,7 +85,7 @@ pub enum Command {
     Update(HopArgs),
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum PackageType {
     Mod(Loader),
     Pack(Loader),
@@ -93,14 +93,14 @@ pub enum PackageType {
     ResourcePack,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Loader { 
     Fabric,
     Forge,
     Quilt,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Server {
     Bukkit,
     Paper,
@@ -109,7 +109,7 @@ pub enum Server {
     Sponge,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum PackageParseError {
     Invalid(String),
 }

@@ -45,8 +45,8 @@ struct AppContext {
 
 #[tokio::main]
 #[no_mangle]
-async fn rust_main(args: c_main::Args) {
-    let arguments = Arguments::from_args(args.into_iter());
+async fn rust_main(arguments: c_main::Args) {
+    let args = Arguments::from_args(arguments.into_iter()).unwrap();
 
     let xdg_dirs = match xdg::BaseDirectories::with_prefix("hopper") {
         Ok(dirs) => dirs,
@@ -74,7 +74,7 @@ async fn rust_main(args: c_main::Args) {
 
     let ctx = AppContext { args, config };
 
-    match ctx.arguments.command {
+    match ctx.args.sub {
         // Command::Get(search_args) => cmd_get(&ctx, search_args).await,
         // Command::Init(hopfile_args) => cmd_init(hopfile_args).await,
         _ => unimplemented!("unimplemented subcommand"),
