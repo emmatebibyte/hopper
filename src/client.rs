@@ -81,8 +81,9 @@ impl HopperClient {
                 .join(",");
             facets.push(format!("{}", versions_facets));
         }
-        if let Some(package_type) = search_args.package_type {
+        if let package_type = search_args.package_type {
             let project_type = match package_type {
+                PackageType::Dummy => "",
                 PackageType::Mod(_) => "[\"project_type:mod\"]",
                 PackageType::Pack(_) => "[\"project_type:modpack\"]",
                 PackageType::Plugin(_) => "[\"project_type:mod\"]",
@@ -90,6 +91,7 @@ impl HopperClient {
             };
 
             let project_category = match package_type {
+                PackageType::Dummy => "",
                 PackageType::Mod(kind) | PackageType::Pack(kind) => {
                     match kind {
                         Loader::Fabric => "[\"categories:fabric\"]",

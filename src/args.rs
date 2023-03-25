@@ -37,24 +37,30 @@ pub struct Arguments {
 }
 
 #[derive(Args, Debug)]
-pub struct InitArgs {
-    #[arg(short = "d")]
-    pub dir: Option<String>,
+pub enum Command {
+    Add(AddArgs),
+    Get(SearchArgs),
+    Init(InitArgs),
+    List(HopArgs),
+    Remove(RmArgs),
+    Update(HopArgs),
+}
+
+#[derive(Args, Debug)]
+pub struct AddArgs {
+    #[arg(short = "m")]
+    pub mc_version: String,
 
     #[arg(short = "f")]
-    pub template: Option<String>,
+    pub hopfiles: Vec<String>,
 
-    #[arg(short = "m")]
-    pub mc_version: Vec<String>,
-    
-    #[arg(short = "t", required)]
-    pub package_type: PackageType,
+    pub package_names: Vec<String>,
 }
 
 #[derive(Args, Debug)]
 pub struct HopArgs {
     #[arg(short = "f")]
-    pub hopfile: Option<String>,
+    pub hopfile: Vec<String>,
 
     #[arg(short = "m")]
     pub mc_version: Vec<String>,
@@ -64,8 +70,31 @@ pub struct HopArgs {
 }
 
 #[derive(Args, Debug)]
+pub struct InitArgs {
+    #[arg(short = "f")]
+    pub template: Option<String>,
+
+    pub mc_version: String,
+    
+    pub package_type: PackageType,
+}
+
+#[derive(Args, Debug)]
+pub struct RmArgs {
+    #[arg(short = "f")]
+    pub hopfile: Option<String>,
+
+    pub package_type: PackageType,
+
+    pub mc_version: String,
+    
+    pub package_names: Vec<String>,
+}
+
+#[derive(Args, Debug)]
 pub struct SearchArgs {
-    pub package_name: String,
+    #[arg(short = "n")]
+    pub no_confirm: bool,
 
     /// Overrides the download directory
     #[arg(short = "d")]
@@ -77,34 +106,14 @@ pub struct SearchArgs {
 
     /// Type of package to use
     #[arg(short = "t")]
-    pub package_type: Option<PackageType>,
-}
+    pub package_type: PackageType,
 
-#[derive(Args, Debug)]
-pub enum Command {
-    Add(SearchArgs),
-    Get(SearchArgs),
-    Init(InitArgs),
-    List(HopArgs),
-    Remove(HopArgs),
-    Update(HopArgs),
-}
-
-impl fmt::Display for Command {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self {
-            Command::Add(_) => write!(f, "add"),
-            Command::Get(_) => write!(f, "get"),
-            Command::Init(_) => write!(f, "init"),
-            Command::List(_) => write!(f, "list"),
-            Command::Remove(_) => write!(f, "remove"),
-            Command::Update(_) => write!(f, "update"),
-        }
-    }
+    pub package_name: String,
 }
 
 #[derive(Clone, Copy, Debug)]
 pub enum PackageType {
+    Dummy,
     Mod(Loader),
     Pack(Loader),
     Plugin(Server),
@@ -127,9 +136,28 @@ pub enum Server {
     Sponge,
 }
 
+impl fmt::Display for Command {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self {
+            Command::Add(_) => write!(f, "add"),
+            Command::Get(_) => write!(f, "get"),
+            Command::Init(_) => write!(f, "init"),
+            Command::List(_) => write!(f, "list"),
+            Command::Remove(_) => write!(f, "remove"),
+            Command::Update(_) => write!(f, "update"),
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum PackageParseError {
     Invalid(String),
+}
+
+impl std::default::Default for PackageType { //TODO: Actually implement Default
+    fn default() -> Self {                   //      for PackageType 
+        PackageType::Dummy
+     }
 }
 
 impl FromStr for PackageType {
