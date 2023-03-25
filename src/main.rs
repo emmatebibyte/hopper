@@ -49,7 +49,6 @@ struct AppContext {
 #[no_mangle]
 async fn rust_main(arguments: c_main::Args) {
     let argv: Vec<&str> = arguments.into_iter().collect();
-    let args: Arguments;
 
     let usage_info = format!(
         "Usage: {}{}",
@@ -64,30 +63,36 @@ async fn rust_main(arguments: c_main::Args) {
     );
 
 
-    args = Arguments::from_args(argv.clone().into_iter()).unwrap_or_else(|_| {
+    let args = Arguments::from_args(
+        argv
+        .clone()
+        .into_iter()
+    ).unwrap_or_else(|_| {
         eprintln!("{}", usage_info);
         exit(EX_USAGE);
     });
 
-    let xdg_dirs = xdg::BaseDirectories::with_prefix("hopper")
-        .unwrap_or_else(|_| {
+    let xdg_basedirs = xdg::BaseDirectories::with_prefix("hopper");
+
+    // this might be cursed; I haven’t decided
+    let config = match get_config(
+        xdg_basedirs.unwrap_or_else(|_| {
             eprintln!(
                 "{}: Unable to open configuration file: Permission denied.",
                 argv[0],
             );
             exit(EX_UNAVAILABLE);
-        });
-
-    let config_path = match get_config(xdg_dirs) {
-        Ok(path) => path,
-        Err((err, code)) => {
-            eprintln!("{}: {}", argv[0], err);
-            exit(code);
+        })
+    ) {
+        Ok(path) => {
+            match Config::read_config(path) {
+                Ok(file) => file,
+                Err((err, code)) => {
+                    eprintln!("{}: {}", argv[0], err);
+                    exit(code);
+                },
+            }
         },
-    };
-
-    let config = match Config::read_config(config_path) {
-        Ok(file) => file,
         Err((err, code)) => {
             eprintln!("{}: {}", argv[0], err);
             exit(code);
