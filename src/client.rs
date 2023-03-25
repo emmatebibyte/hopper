@@ -67,9 +67,8 @@ impl HopperClient {
 
         let mut urls = Vec::new();
 
-        for entry in self.config.sources.drain() {
-            let (source, domain) = entry;
-            urls.push(format!("{}/v2/search", domain));
+        for entry in self.config.sources.modrinth.iter() {
+            urls.push(format!("{}/v2/search", entry));
         }
 
         let mut params = vec![("query", search_args.package_name.to_owned())];

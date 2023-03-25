@@ -18,14 +18,19 @@
  * Hopper. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use core::str::FromStr;
+use core::{
+    fmt,
+    str::FromStr,
+};
 
 pub use arg::Args;
 
 #[derive(Args, Debug)]
 pub struct Arguments {
+    pub argv0: String,
+
     #[arg(short = "v")]
-    pub v: bool,
+    pub v: Option<bool>,
     
     #[arg(sub)]
     pub sub: Command,
@@ -83,6 +88,19 @@ pub enum Command {
     List(HopArgs),
     Remove(HopArgs),
     Update(HopArgs),
+}
+
+impl fmt::Display for Command {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self {
+            Command::Add(_) => write!(f, "add"),
+            Command::Get(_) => write!(f, "get"),
+            Command::Init(_) => write!(f, "init"),
+            Command::List(_) => write!(f, "list"),
+            Command::Remove(_) => write!(f, "remove"),
+            Command::Update(_) => write!(f, "update"),
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug)]

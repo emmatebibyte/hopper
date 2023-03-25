@@ -19,14 +19,12 @@
  */
 
 use std::{
-    collections::HashMap,
     fs::File,
     io::Read,
     path::PathBuf,
 };
 
 use serde::Deserialize;
-use toml::de::ValueDeserializer;
 use xdg::BaseDirectories;
 use yacexits::{
     EX_DATAERR,
@@ -36,11 +34,16 @@ use yacexits::{
 #[derive(Deserialize)]
 pub struct Config {
     pub hopfiles: Vec<String>,
-    pub sources: HashMap<String, String>,
+    pub sources: Sources,
+}
+
+#[derive(Deserialize)]
+pub struct Sources {
+    pub modrinth: Vec<String>,
 }
 
 pub fn get_config(dirs: BaseDirectories) -> Result<PathBuf, (String, u32)> {
-    match dirs.place_config_file("hopper.toml") {
+    match dirs.place_config_file("config.toml") {
         Ok(file) => Ok(file),
         Err(_) => {
             Err((
@@ -59,21 +62,18 @@ impl Config {
             Ok(file) => file,
             Err(_) => {
                 return Err((
-                    format!(
-                        "{}: Permission denied.",
-                        config_path
-                            .clone()
-                            .into_os_string()
-                            .into_string()
-                            .unwrap()
-                    ),
+                    format!("{}: Permission denied.", config_path.display()),
                     EX_UNAVAILABLE,
                 ));
             },
         };
 
-        match config_file.read_to_end(&mut buf) {
-            Ok(_) => {},
+        if let Some(err) = config_file.read_to_end(&mut buf).err() {
+            return Err((format!("{:?}", err), EX_DATAERR));
+        };
+
+        let toml = match String::from_utf8(buf) {
+            Ok(contents) => contents,
             Err(err) => {
                 return Err((
                     format!("{:?}", err),
@@ -82,19 +82,16 @@ impl Config {
             },
         };
 
-        let toml = match String::from_utf8(buf) {
-            Ok(contents) => contents,
-            Err(_) => {
-                return Err((
-                    format!("Invalid configuration file."),
-                    EX_DATAERR,
-                ));
-            },
-        };
-
-        match Config::deserialize(ValueDeserializer::new(&toml)) {
+        match toml::from_str(&toml) {
             Ok(val) => Ok(val),
-            Err(err) => Err((format!("{:?}", err), EX_DATAERR)),
+            Err(_) => {
+                Err((
+                    format!(
+                        "{}: Invalid configuration file.", config_path.display()
+                    ),
+                    EX_DATAERR,
+                ))
+            },
         }
     }
 }
