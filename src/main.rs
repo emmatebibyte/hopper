@@ -54,13 +54,13 @@ async fn rust_main(arguments: c_main::Args) {
     let usage_info = format!(
         "Usage: {}{}",
         argv[0],
-        " [-v] add | get | init | list | remove | update \n\n".to_owned() +
-        "add -f hopfiles... [-m version]\n" +
-        "get [-d directory] -m versions... [-n] [-t types...]\n" +
-        "init -d directory [-f hopfiles...] -m version -t type\n" +
-        "list [-f hopfiles...] [-m versions...] [-t types...]\n" +
-        "remove [-f hopfiles...] -m version -t type\n" +
-        "update [-f hopfiles...] [-m versions...] [-t types...]",
+        " [-v] add | get | init | list | remove | update\n\n".to_owned() +
+        "add [-m version] [-f hopfiles...] packages...\n" +
+        "get [-n] [-d directory] [-m versions...] [-t types...] packages\n" +
+        "init [-f hopfiles...] version type\n" +
+        "list [[-f hopfiles...] | [-m versions...] [-t types...]]\n" +
+        "remove [[-f hopfiles...] | type version]] packages...\n" +
+        "update [[-f hopfiles... | [-m versions...] [-t types...]]",
     );
 
 
