@@ -55,7 +55,7 @@ impl HopperClient {
         curl::init();
         Self {
             config: config,
-            client: Easy::new()
+            client: Easy::new(),
         }
     }
 
