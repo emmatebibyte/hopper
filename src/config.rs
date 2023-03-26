@@ -20,7 +20,7 @@
 
 use std::{
     fs::File,
-    io::Read,
+    io::{Read, self},
     path::PathBuf,
 };
 
@@ -30,6 +30,8 @@ use yacexits::{
     EX_DATAERR,
     EX_UNAVAILABLE,
 };
+
+use crate::error::CError;
 
 #[derive(Deserialize)]
 pub struct Config {
@@ -42,56 +44,64 @@ pub struct Sources {
     pub modrinth: Vec<String>,
 }
 
-pub fn get_config(dirs: BaseDirectories) -> Result<PathBuf, (String, u32)> {
-    match dirs.place_config_file("config.toml") {
-        Ok(file) => Ok(file),
-        Err(_) => {
-            Err((
-                format!("Unable to create configuration file."),
-                EX_UNAVAILABLE,
-            ))
-        },
+pub enum ConfigError {
+    CreateFailed(io::Error),
+    OpenError(io::Error),
+    ReadError(io::Error),
+    FormatError(std::string::FromUtf8Error),
+    ParseError(toml::de::Error),
+}
+
+impl CError for ConfigError {
+    fn message(&self) -> String {
+        match self {
+            Self::CreateFailed(err) => {
+                format!("Unable to create configuration file: {}", err)
+            },
+            Self::OpenError(err) => {
+                format!("Unable to open configuration file: {}", err)
+            },
+            Self::ReadError(err) => {
+                format!("Error while reading configuration file: {}", err) 
+            },
+            Self::FormatError(err) => {
+                format!("Configuration file is not valid utf-8: {}", err) 
+            },
+            Self::ParseError(err) => {
+                format!("Unable to parse configuration file: {}", err) 
+            },
+        }
+    }
+
+    fn code(&self) -> u32 { 
+        match self {
+            Self::CreateFailed(_) => EX_UNAVAILABLE,
+            Self::OpenError(_) => EX_UNAVAILABLE,
+            Self::ReadError(_) => EX_DATAERR,
+            Self::FormatError(_) => EX_DATAERR,
+            Self::ParseError(_) => EX_DATAERR,
+        }
+        
     }
 }
 
+pub fn get_config(dirs: BaseDirectories) -> Result<PathBuf, ConfigError> {
+    dirs.place_config_file("config.toml").map_err(ConfigError::CreateFailed)
+}
+
 impl Config {
-    pub fn read_config(config_path: PathBuf) -> Result<Self, (String, u32)> {
+    pub fn read_config(config_path: PathBuf) -> Result<Self, ConfigError> {
         let mut buf: Vec<u8> = Vec::new();
 
-        let mut config_file = match File::open(&config_path) {
-            Ok(file) => file,
-            Err(_) => {
-                return Err((
-                    format!("{}: Permission denied.", config_path.display()),
-                    EX_UNAVAILABLE,
-                ));
-            },
-        };
+        let mut config_file = File::open(&config_path)
+            .map_err(ConfigError::OpenError)?;
 
-        if let Some(err) = config_file.read_to_end(&mut buf).err() {
-            return Err((format!("{:?}", err), EX_DATAERR));
-        };
+        config_file.read_to_end(&mut buf)
+            .map_err(ConfigError::ReadError)?;
 
-        let toml = match String::from_utf8(buf) {
-            Ok(contents) => contents,
-            Err(err) => {
-                return Err((
-                    format!("{:?}", err),
-                    EX_DATAERR,
-                ));
-            },
-        };
+        let toml = String::from_utf8(buf)
+            .map_err(ConfigError::FormatError)?;
 
-        match toml::from_str(&toml) {
-            Ok(val) => Ok(val),
-            Err(_) => {
-                Err((
-                    format!(
-                        "{}: Invalid configuration file.", config_path.display()
-                    ),
-                    EX_DATAERR,
-                ))
-            },
-        }
+        toml::from_str(&toml).map_err(ConfigError::ParseError)
     }
 }

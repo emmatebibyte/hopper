@@ -26,18 +26,18 @@ mod args;
 mod client;
 mod config;
 mod hopfile;
+mod error;
 
 use api::*;
 use args::*;
 use client::*;
 use config::*;
 use hopfile::*;
+use error::*;
 
 use yacexits::{
     exit,
     EX_SOFTWARE,
-    EX_UNAVAILABLE,
-    EX_USAGE,
 };
 
 struct AppContext {
@@ -50,55 +50,19 @@ struct AppContext {
 async fn rust_main(arguments: c_main::Args) {
     let argv: Vec<&str> = arguments.into_iter().collect();
 
-    let usage_info = format!(
-        "Usage: {}{}",
-        argv[0],
-        " [-v] add | get | init | list | remove | update\n\n".to_owned() +
-        "add [-m version] [-f hopfiles...] packages...\n" +
-        "get [-n] [-d directory] [-m versions...] [-t types...] packages\n" +
-        "init [-f hopfiles...] version type\n" +
-        "list [[-f hopfiles...] | [-m versions...] [-t types...]]\n" +
-        "remove [[-f hopfiles...] | type version]] packages...\n" +
-        "update [[-f hopfiles... | [-m versions...] [-t types...]]",
-    );
-
-
     let args = Arguments::from_args(
         argv
         .clone()
         .into_iter()
-    ).unwrap_or_else(|_| {
-        eprintln!("{}", usage_info);
-        exit(EX_USAGE);
-    });
+    ).unwrap_or_else(|e| e.exit());
 
-    let xdg_basedirs = xdg::BaseDirectories::with_prefix("hopper");
+    let xdg_basedirs = xdg::BaseDirectories::with_prefix("hopper")
+        .unwrap_or_else(|e| e.exit());
 
-    // this might be cursed; I haven’t decided
-    let config = match get_config(
-        xdg_basedirs.unwrap_or_else(|_| {
-            eprintln!(
-                "{}: Unable to open configuration file: Permission denied.",
-                argv[0],
-            );
-            exit(EX_UNAVAILABLE);
-        })
-    ) {
-        Ok(path) => {
-            match Config::read_config(path) {
-                Ok(file) => file,
-                Err((err, code)) => {
-                    eprintln!("{}: {}", argv[0], err);
-                    exit(code);
-                },
-            }
-        },
-        Err((err, code)) => {
-            eprintln!("{}: {}", argv[0], err);
-            exit(code);
-        },
-    };
-
+    let config = get_config(xdg_basedirs)
+        .and_then(Config::read_config)
+        .unwrap_or_else(|e| e.exit());
+        
     let ctx = AppContext { args, config };
 
     match ctx.args.sub {
