@@ -2,7 +2,7 @@
  * Copyright (c) 2021–2022 Marceline Cramer <mars@tebibyte.media>
  * Copyright (c) 2022–2023 Emma Tebibyte <emma@tebibyte.media>
  * Copyright (c) 2022 Spookdot <https://git.tebibyte.media/spookdot/>
- * Copyright (c) 2022 [ ] <https://git.tebibyte.media/BlankParenthesis/>
+ * Copyright (c) 2022-2023 [ ] <https://git.tebibyte.media/BlankParenthesis/>
  * SPDX-License-Identifier: AGPL-3.0-or-later
  *
  * This file is part of Hopper.
