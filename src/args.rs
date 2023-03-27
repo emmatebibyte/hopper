@@ -19,8 +19,8 @@
  */
 
 use core::{
-    fmt,
-    str::FromStr,
+	fmt,
+	str::FromStr,
 };
 
 pub use arg::Args;
@@ -28,137 +28,137 @@ use yacexits::EX_DATAERR;
 
 #[derive(Args, Debug)]
 pub struct Arguments {
-    pub argv0: String,
+	pub argv0: String,
 
-    #[arg(short = "v")]
-    pub v: Option<bool>,
-    
-    #[arg(sub)]
-    pub sub: Command,
+	#[arg(short = "v")]
+	pub v: Option<bool>,
+	
+	#[arg(sub)]
+	pub sub: Command,
 }
 
 #[derive(Args, Debug)]
 pub enum Command {
-    Add(AddArgs),
-    Get(SearchArgs),
-    Init(InitArgs),
-    List(HopArgs),
-    Remove(RmArgs),
-    Update(HopArgs),
+	Add(AddArgs),
+	Get(SearchArgs),
+	Init(InitArgs),
+	List(HopArgs),
+	Remove(RmArgs),
+	Update(HopArgs),
 }
 
 #[derive(Args, Debug)]
 pub struct AddArgs {
-    #[arg(short = "m")]
-    pub mc_version: String,
+	#[arg(short = "m")]
+	pub mc_version: String,
 
-    #[arg(short = "f")]
-    pub hopfiles: Vec<String>,
+	#[arg(short = "f")]
+	pub hopfiles: Vec<String>,
 
-    pub package_names: Vec<String>,
+	pub package_names: Vec<String>,
 }
 
 #[derive(Args, Debug)]
 pub struct HopArgs {
-    #[arg(short = "f")]
-    pub hopfile: Vec<String>,
+	#[arg(short = "f")]
+	pub hopfile: Vec<String>,
 
-    #[arg(short = "m")]
-    pub mc_version: Vec<String>,
+	#[arg(short = "m")]
+	pub mc_version: Vec<String>,
 
-    #[arg(short = "t")]
-    pub package_type: Option<PackageType>,
+	#[arg(short = "t")]
+	pub package_type: Option<PackageType>,
 }
 
 #[derive(Args, Debug)]
 pub struct InitArgs {
-    #[arg(short = "f")]
-    pub template: Option<String>,
+	#[arg(short = "f")]
+	pub template: Option<String>,
 
-    pub mc_version: String,
-    
-    pub package_type: PackageType,
+	pub mc_version: String,
+	
+	pub package_type: PackageType,
 }
 
 #[derive(Args, Debug)]
 pub struct RmArgs {
-    #[arg(short = "f")]
-    pub hopfile: Option<String>,
+	#[arg(short = "f")]
+	pub hopfile: Option<String>,
 
-    pub package_type: PackageType,
+	pub package_type: PackageType,
 
-    pub mc_version: String,
-    
-    pub package_names: Vec<String>,
+	pub mc_version: String,
+	
+	pub package_names: Vec<String>,
 }
 
 #[derive(Args, Debug)]
 pub struct SearchArgs {
-    #[arg(short = "n")]
-    pub no_confirm: bool,
+	#[arg(short = "n")]
+	pub no_confirm: bool,
 
-    /// Overrides the download directory
-    #[arg(short = "d")]
-    pub dir: Option<String>,
+	/// Overrides the download directory
+	#[arg(short = "d")]
+	pub dir: Option<String>,
 
-    /// Restricts the target Minecraft version
-    #[arg(short = "m")]
-    pub mc_version: Vec<String>,
+	/// Restricts the target Minecraft version
+	#[arg(short = "m")]
+	pub mc_version: Vec<String>,
 
-    /// Type of package to use
-    #[arg(short = "t")]
-    pub package_type: PackageType,
+	/// Type of package to use
+	#[arg(short = "t")]
+	pub package_type: PackageType,
 
-    pub package_name: String,
+	pub package_name: String,
 }
 
 #[derive(Clone, Copy, Debug)]
 pub enum PackageType {
-    Dummy,
-    Mod(Loader),
-    Pack(Loader),
-    Plugin(Server),
-    ResourcePack,
+	Dummy,
+	Mod(Loader),
+	Pack(Loader),
+	Plugin(Server),
+	ResourcePack,
 }
 
 #[derive(Clone, Copy, Debug)]
 pub enum Loader { 
-    Fabric,
-    Forge,
-    Quilt,
+	Fabric,
+	Forge,
+	Quilt,
 }
 
 #[derive(Clone, Copy, Debug)]
 pub enum Server {
-    Bukkit,
-    Paper,
-    Purpur,
-    Spigot,
-    Sponge,
+	Bukkit,
+	Paper,
+	Purpur,
+	Spigot,
+	Sponge,
 }
 
 impl fmt::Display for Command {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self {
-            Command::Add(_) => write!(f, "add"),
-            Command::Get(_) => write!(f, "get"),
-            Command::Init(_) => write!(f, "init"),
-            Command::List(_) => write!(f, "list"),
-            Command::Remove(_) => write!(f, "remove"),
-            Command::Update(_) => write!(f, "update"),
-        }
-    }
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		match &self {
+			Command::Add(_) => write!(f, "add"),
+			Command::Get(_) => write!(f, "get"),
+			Command::Init(_) => write!(f, "init"),
+			Command::List(_) => write!(f, "list"),
+			Command::Remove(_) => write!(f, "remove"),
+			Command::Update(_) => write!(f, "update"),
+		}
+	}
 }
 
 #[derive(Clone, Debug)]
 pub enum PackageParseError {
-    Invalid(String),
+	Invalid(String),
 }
 
-impl std::default::Default for PackageType { //TODO: Actually implement Default
-    fn default() -> Self {                   //      for PackageType 
-        PackageType::Dummy
-     }
+impl std::default::Default for PackageType { // TODO: Actually implement Default
+	fn default() -> Self {					 // for PackageType 
+		PackageType::Dummy
+	 }
 }
 
 impl From<PackageParseError> for (String, u32) {
@@ -170,43 +170,43 @@ impl From<PackageParseError> for (String, u32) {
 }
 
 impl FromStr for PackageType {
-    type Err = PackageParseError;
-    fn from_str(s: &str) -> Result<PackageType, PackageParseError> {
-        let pieces: Vec<&str> = s.split("-").collect();
+	type Err = PackageParseError;
+	fn from_str(s: &str) -> Result<PackageType, PackageParseError> {
+		let pieces: Vec<&str> = s.split("-").collect();
 
-        if pieces.len() > 2 || pieces.len() == 1 {
-            return Err(PackageParseError::Invalid(
-                format!("{}: Invalid package type.", s)
-            ));
-        }
+		if pieces.len() > 2 || pieces.len() == 1 {
+			return Err(PackageParseError::Invalid(
+				format!("{}: Invalid package type.", s)
+			));
+		}
 
-        let (prefix, postfix) = (pieces[0], pieces[1]);
+		let (prefix, postfix) = (pieces[0], pieces[1]);
 
-        let loader = match prefix {
-            "bukkit" => return Ok(PackageType::Plugin(Server::Bukkit)),
-            "fabric" => Loader::Fabric,
-            "forge" => Loader::Forge,
-            "paper" => return Ok(PackageType::Plugin(Server::Paper)),
-            "purpur" => return Ok(PackageType::Plugin(Server::Purpur)),
-            "quilt" => Loader::Quilt,
-            "resource" => return Ok(PackageType::ResourcePack),
-            "spigot" => return Ok(PackageType::Plugin(Server::Spigot)),
-            "sponge" => return Ok(PackageType::Plugin(Server::Sponge)),
-            _ => {
-                return Err(PackageParseError::Invalid(
-                    format!("{}: Invalid package type.", prefix)
-                ))
-            },
-        };
+		let loader = match prefix {
+			"bukkit" => return Ok(PackageType::Plugin(Server::Bukkit)),
+			"fabric" => Loader::Fabric,
+			"forge" => Loader::Forge,
+			"paper" => return Ok(PackageType::Plugin(Server::Paper)),
+			"purpur" => return Ok(PackageType::Plugin(Server::Purpur)),
+			"quilt" => Loader::Quilt,
+			"resource" => return Ok(PackageType::ResourcePack),
+			"spigot" => return Ok(PackageType::Plugin(Server::Spigot)),
+			"sponge" => return Ok(PackageType::Plugin(Server::Sponge)),
+			_ => {
+				return Err(PackageParseError::Invalid(
+					format!("{}: Invalid package type.", prefix)
+				))
+			},
+		};
 
-        match postfix {
-            "mod" => Ok(PackageType::Mod(loader)),
-            "pack" => Ok(PackageType::Pack(loader)),
-            _ => {
-                Err(PackageParseError::Invalid(
-                    format!("{}: Invalid package type.", postfix)
-                ))
-            },
-        }
-    }
+		match postfix {
+			"mod" => Ok(PackageType::Mod(loader)),
+			"pack" => Ok(PackageType::Pack(loader)),
+			_ => {
+				Err(PackageParseError::Invalid(
+					format!("{}: Invalid package type.", postfix)
+				))
+			},
+		}
+	}
 }

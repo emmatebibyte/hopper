@@ -38,40 +38,38 @@ use error::*;
 use yacexits::{
 	exit,
 	EX_OSERR,
-    EX_SOFTWARE,
+	EX_SOFTWARE,
 };
 
 struct AppContext {
-    args: Arguments,
-    config: Config,
+	args: Arguments,
+	config: Config,
 }
 
 #[tokio::main]
 #[no_mangle]
 async fn rust_main(arguments: yacexits::Args) -> Result<u32, (String, u32)> {
-    let argv: Vec<&str> = arguments.into_iter().collect();
+	let argv: Vec<&str> = arguments.into_iter().collect();
 
-    let args = match Arguments::from_args(argv.clone().into_iter()) {
+	let args = match Arguments::from_args(argv.clone().into_iter()) {
 		Ok(args) => args,
 		Err(_) => {
 			return Err((format!("Unable to ascertain arguments."), EX_OSERR));
 		}
 	};
 
-    let config = Config::read_config()?;        
-    let ctx = AppContext { args, config };
+	let config = Config::read_config()?;
+	let ctx = AppContext { args, config };
 
-    match ctx.args.sub {
-        // Command::Get(search_args) => cmd_get(&ctx, search_args).await,
-        // Command::Init(hopfile_args) => cmd_init(hopfile_args).await,
-        _ => {
-            return Err((
-                format!(
-                    "{}: Unimplemented subcommand.",
-                    ctx.args.sub
-                ),
-                EX_SOFTWARE,
-            ));
-        },
-    };
+	match ctx.args.sub {
+		// Command::Get(search_args) => cmd_get(&ctx, search_args).await,
+		// Command::Init(hopfile_args) => cmd_init(hopfile_args).await,
+		_ => {
+			let message = format!(
+				"{}: Unimplemented subcommand.", ctx.args.sub
+			);
+			let code = EX_SOFTWARE;
+			Err(HopError { message, code })
+		},
+	}?
 }
