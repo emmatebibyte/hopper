@@ -24,6 +24,7 @@ pub struct HopError {
 	pub message: String,
 }
 
+// TODO: More granular matching here
 impl From<arg::ParseKind<'_>> for HopError {
 	fn from(_: arg::ParseKind) -> Self {
 		let message = format!(
@@ -37,14 +38,6 @@ impl From<arg::ParseKind<'_>> for HopError {
 			"update [[-f hopfiles... | [-m versions...] [-t types...]]",
 		);
 		Self { message, code: EX_USAGE }
-	}
-}
-
-impl From<xdg::BaseDirectoriesError> for HopError  {
-	fn from(err: xdg::BaseDirectoriesError) -> Self {
-		let message = format!("{}: Unable to open configuration file", err);
-
-		Self { message, code: EX_UNAVAILABLE }
 	}
 }
 

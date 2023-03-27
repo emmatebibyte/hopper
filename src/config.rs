@@ -19,8 +19,6 @@
  * Hopper. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::HopError;
-
 use std::{
     fs::File,
     io::{ Read, self },
@@ -56,6 +54,7 @@ pub enum ConfigError {
 impl From<ConfigError> for (String, u32) {
 	fn from(error: ConfigError) -> Self {
         let (message, code) = match error {
+			// TODO: More precise matching inside these arms
             ConfigError::CreateError(_) => {
 				("Unable to create configuration file.", EX_UNAVAILABLE)
             },

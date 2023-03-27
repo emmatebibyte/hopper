@@ -24,6 +24,7 @@ use core::{
 };
 
 pub use arg::Args;
+use yacexits::EX_DATAERR;
 
 #[derive(Args, Debug)]
 pub struct Arguments {
@@ -160,6 +161,14 @@ impl std::default::Default for PackageType { //TODO: Actually implement Default
      }
 }
 
+impl From<PackageParseError> for (String, u32) {
+	fn from(error: PackageParseError) -> Self {
+		match error {
+			PackageParseError::Invalid(err) => (err, EX_DATAERR),
+		}
+	}
+}
+
 impl FromStr for PackageType {
     type Err = PackageParseError;
     fn from_str(s: &str) -> Result<PackageType, PackageParseError> {
@@ -167,7 +176,7 @@ impl FromStr for PackageType {
 
         if pieces.len() > 2 || pieces.len() == 1 {
             return Err(PackageParseError::Invalid(
-                format!("{}: Invalid package name.", s)
+                format!("{}: Invalid package type.", s)
             ));
         }
 
