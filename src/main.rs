@@ -68,8 +68,7 @@ async fn rust_main(arguments: yacexits::Args) -> Result<u32, (String, u32)> {
 			let message = format!(
 				"{}: Unimplemented subcommand.", ctx.args.sub
 			);
-			let code = EX_SOFTWARE;
-			Err(HopError { message, code })
+			Err(HopError { message, code: EX_SOFTWARE })
 		},
 	}?
 }
