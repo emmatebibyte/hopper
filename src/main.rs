@@ -36,7 +36,8 @@ use hopfile::*;
 use error::*;
 
 use yacexits::{
-    exit,
+	exit,
+	EX_OSERR,
     EX_SOFTWARE,
 };
 
@@ -47,34 +48,30 @@ struct AppContext {
 
 #[tokio::main]
 #[no_mangle]
-async fn rust_main(arguments: c_main::Args) {
+async fn rust_main(arguments: yacexits::Args) -> Result<u32, (String, u32)> {
     let argv: Vec<&str> = arguments.into_iter().collect();
 
-    let args = Arguments::from_args(
-        argv
-        .clone()
-        .into_iter()
-    ).unwrap_or_else(|e| e.exit());
+    let args = match Arguments::from_args(argv.clone().into_iter()) {
+		Ok(args) => args,
+		Err(_) => {
+			return Err((format!("Unable to ascertain arguments."), EX_OSERR));
+		}
+	};
 
-    let xdg_basedirs = xdg::BaseDirectories::with_prefix("hopper")
-        .unwrap_or_else(|e| e.exit());
-
-    let config = get_config(xdg_basedirs)
-        .and_then(Config::read_config)
-        .unwrap_or_else(|e| e.exit());
-        
+    let config = Config::read_config()?;        
     let ctx = AppContext { args, config };
 
     match ctx.args.sub {
         // Command::Get(search_args) => cmd_get(&ctx, search_args).await,
         // Command::Init(hopfile_args) => cmd_init(hopfile_args).await,
         _ => {
-            eprintln!(
-                "{}: {}: Unimplemented subcommand.",
-                argv[0],
-                ctx.args.sub
-            );
-            exit(EX_SOFTWARE);
+            return Err((
+                format!(
+                    "{}: Unimplemented subcommand.",
+                    ctx.args.sub
+                ),
+                EX_SOFTWARE,
+            ));
         },
     };
 }

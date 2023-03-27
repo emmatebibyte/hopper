@@ -19,9 +19,11 @@
  * Hopper. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::HopError;
+
 use std::{
     fs::File,
-    io::{Read, self},
+    io::{ Read, self },
     path::PathBuf,
 };
 
@@ -31,8 +33,6 @@ use yacexits::{
     EX_DATAERR,
     EX_UNAVAILABLE,
 };
-
-use crate::error::CError;
 
 #[derive(Deserialize)]
 pub struct Config {
@@ -46,52 +46,103 @@ pub struct Sources {
 }
 
 pub enum ConfigError {
-    CreateFailed(io::Error),
+    CreateError(io::Error),
     OpenError(io::Error),
     ReadError(io::Error),
     FormatError(std::string::FromUtf8Error),
     ParseError(toml::de::Error),
 }
 
-impl CError for ConfigError {
-    fn message(&self) -> String {
-        match self {
-            Self::CreateFailed(err) => {
-                format!("Unable to create configuration file: {}", err)
+impl From<ConfigError> for HopError {
+    fn from(error: ConfigError) -> Self {
+        let (message, code) = match error {
+            ConfigError::CreateError(err) => {
+				(
+					format!("{}: Unable to create configuration file.", err),
+					EX_UNAVAILABLE,
+				)
             },
-            Self::OpenError(err) => {
-                format!("Unable to open configuration file: {}", err)
+            ConfigError::OpenError(err) => {
+				(
+					format!("{}: Unable to open configuration file.", err),
+					EX_UNAVAILABLE,
+				)
             },
-            Self::ReadError(err) => {
-                format!("Error while reading configuration file: {}", err) 
+            ConfigError::ReadError(err) => {
+				(
+					format!("{}: Error while reading configuration file", err),
+					EX_DATAERR,
+				)
             },
-            Self::FormatError(err) => {
-                format!("Configuration file is not valid utf-8: {}", err) 
+            ConfigError::FormatError(err) => {
+				(
+					format!("{}: Configuration file is not valid UTF-8.", err),
+					EX_DATAERR
+				)
             },
-            Self::ParseError(err) => {
-                format!("Unable to parse configuration file: {}", err) 
+            ConfigError::ParseError(err) => {
+				(
+					format!("{}: Unable to parse configuration file.", err),
+					EX_DATAERR,
+				)
             },
-        }
-    }
+        };
 
-    fn code(&self) -> u32 { 
-        match self {
-            Self::CreateFailed(_) => EX_UNAVAILABLE,
-            Self::OpenError(_) => EX_UNAVAILABLE,
-            Self::ReadError(_) => EX_DATAERR,
-            Self::FormatError(_) => EX_DATAERR,
-            Self::ParseError(_) => EX_DATAERR,
-        }
-        
+		Self { message, code }
     }
 }
 
-pub fn get_config(dirs: BaseDirectories) -> Result<PathBuf, ConfigError> {
-    dirs.place_config_file("config.toml").map_err(ConfigError::CreateFailed)
+impl From<ConfigError> for (String, u32) {
+	fn from(error: ConfigError) -> Self {
+        let (message, code) = match error {
+            ConfigError::CreateError(err) => {
+				(
+					format!("{}: Unable to create configuration file.", err),
+					EX_UNAVAILABLE,
+				)
+            },
+            ConfigError::OpenError(err) => {
+				(
+					format!("{}: Unable to open configuration file.", err),
+					EX_UNAVAILABLE,
+				)
+            },
+            ConfigError::ReadError(err) => {
+				(
+					format!("{}: Error while reading configuration file", err),
+					EX_DATAERR,
+				)
+            },
+            ConfigError::FormatError(err) => {
+				(
+					format!("{}: Configuration file is not valid UTF-8.", err),
+					EX_DATAERR
+				)
+            },
+            ConfigError::ParseError(err) => {
+				(
+					format!("{}: Unable to parse configuration file", err),
+					EX_DATAERR,
+				)
+            },
+        };
+
+		(message, code)
+	}
+
+}
+
+impl From<xdg::BaseDirectoriesError> for ConfigError {
+	fn from(err: xdg::BaseDirectoriesError) -> Self {
+		ConfigError::CreateError(io::Error::from(err))
+	}
 }
 
 impl Config {
-    pub fn read_config(config_path: PathBuf) -> Result<Self, ConfigError> {
+    pub fn read_config() -> Result<Self, ConfigError> {
+		let config_path = BaseDirectories::with_prefix("hopper")?
+			.place_config_file("config.toml")
+			.map_err(ConfigError::CreateError)?;
         let mut buf: Vec<u8> = Vec::new();
 
         let mut config_file = File::open(&config_path)
