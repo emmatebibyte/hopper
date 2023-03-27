@@ -53,81 +53,27 @@ pub enum ConfigError {
     ParseError(toml::de::Error),
 }
 
-impl From<ConfigError> for HopError {
-    fn from(error: ConfigError) -> Self {
-        let (message, code) = match error {
-            ConfigError::CreateError(err) => {
-				(
-					format!("{}: Unable to create configuration file.", err),
-					EX_UNAVAILABLE,
-				)
-            },
-            ConfigError::OpenError(err) => {
-				(
-					format!("{}: Unable to open configuration file.", err),
-					EX_UNAVAILABLE,
-				)
-            },
-            ConfigError::ReadError(err) => {
-				(
-					format!("{}: Error while reading configuration file", err),
-					EX_DATAERR,
-				)
-            },
-            ConfigError::FormatError(err) => {
-				(
-					format!("{}: Configuration file is not valid UTF-8.", err),
-					EX_DATAERR
-				)
-            },
-            ConfigError::ParseError(err) => {
-				(
-					format!("{}: Unable to parse configuration file.", err),
-					EX_DATAERR,
-				)
-            },
-        };
-
-		Self { message, code }
-    }
-}
-
 impl From<ConfigError> for (String, u32) {
 	fn from(error: ConfigError) -> Self {
         let (message, code) = match error {
-            ConfigError::CreateError(err) => {
-				(
-					format!("{}: Unable to create configuration file.", err),
-					EX_UNAVAILABLE,
-				)
+            ConfigError::CreateError(_) => {
+				("Unable to create configuration file.", EX_UNAVAILABLE)
             },
-            ConfigError::OpenError(err) => {
-				(
-					format!("{}: Unable to open configuration file.", err),
-					EX_UNAVAILABLE,
-				)
+            ConfigError::OpenError(_) => {
+				("Unable to open configuration file.", EX_UNAVAILABLE)
             },
-            ConfigError::ReadError(err) => {
-				(
-					format!("{}: Error while reading configuration file", err),
-					EX_DATAERR,
-				)
+            ConfigError::ReadError(_) => {
+				("Error while reading configuration file.", EX_DATAERR)
             },
-            ConfigError::FormatError(err) => {
-				(
-					format!("{}: Configuration file is not valid UTF-8.", err),
-					EX_DATAERR
-				)
+            ConfigError::FormatError(_) => {
+				("Configuration file is not valid UTF-8.", EX_DATAERR)
             },
-            ConfigError::ParseError(err) => {
-				(
-					format!("{}: Unable to parse configuration file", err),
-					EX_DATAERR,
-				)
+            ConfigError::ParseError(_) => {
+				("Unable to parse configuration file.", EX_DATAERR)
             },
         };
 
-		(message, code)
+		(message.to_string(), code)
 	}
 
 }
