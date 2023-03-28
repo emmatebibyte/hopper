@@ -26,17 +26,14 @@ mod args;
 mod client;
 mod config;
 mod hopfile;
-mod error;
 
 use api::*;
 use args::*;
 use client::*;
 use config::*;
 use hopfile::*;
-use error::*;
 
 use yacexits::{
-	exit,
 	EX_OSERR,
 	EX_SOFTWARE,
 };
@@ -51,12 +48,8 @@ struct AppContext {
 async fn rust_main(arguments: yacexits::Args) -> Result<u32, (String, u32)> {
 	let argv: Vec<&str> = arguments.into_iter().collect();
 
-	let args = match Arguments::from_args(argv.clone().into_iter()) {
-		Ok(args) => args,
-		Err(_) => {
-			return Err((format!("Unable to ascertain arguments."), EX_OSERR));
-		}
-	};
+	let args = Arguments::from_args(argv.clone().into_iter())
+		.map_err(|err| { ArgsError::from(err) })?;
 
 	let config = Config::read_config()?;
 	let ctx = AppContext { args, config };
@@ -68,7 +61,7 @@ async fn rust_main(arguments: yacexits::Args) -> Result<u32, (String, u32)> {
 			let message = format!(
 				"{}: Unimplemented subcommand.", ctx.args.sub
 			);
-			Err(HopError { message, code: EX_SOFTWARE })
+			Err((message, EX_SOFTWARE))
 		},
 	}?
 }

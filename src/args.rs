@@ -24,7 +24,7 @@ use core::{
 };
 
 pub use arg::Args;
-use yacexits::EX_DATAERR;
+use yacexits::{ EX_DATAERR, EX_USAGE };
 
 #[derive(Args, Debug)]
 pub struct Arguments {
@@ -208,5 +208,34 @@ impl FromStr for PackageType {
 				))
 			},
 		}
+	}
+}
+
+// TODO: Make this an enum for this for matching specific error kinds
+pub struct ArgsError {
+	message: String,
+	code: u32,
+}
+
+// TODO: More granular matching here with an enum
+impl From<arg::ParseKind<'_>> for ArgsError {
+	fn from(_: arg::ParseKind) -> Self {
+		let message = format!(
+			"{}",
+			"[-v] add | get | init | list | remove | update\n\n".to_owned() +
+			"add [-m version] [-f hopfiles...] packages...\n" +
+			"get [-n] [-d directory] [-m versions...] [-t types...] packages\n" +
+			"init [-f hopfiles...] version type\n" +
+			"list [[-f hopfiles...] | [-m versions...] [-t types...]]\n" +
+			"remove [[-f hopfiles...] | type version]] packages...\n" +
+			"update [[-f hopfiles... | [-m versions...] [-t types...]]",
+		);
+		ArgsError { message, code: EX_USAGE }
+	}
+}
+
+impl From<ArgsError> for (String, u32) {
+	fn from(err: ArgsError) -> Self {
+		(err.message, err.code)
 	}
 }
