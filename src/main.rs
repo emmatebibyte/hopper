@@ -19,8 +19,6 @@
  * Hopper. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#![no_main]
-
 mod api;
 mod args;
 mod client;
@@ -33,9 +31,13 @@ use client::*;
 use config::*;
 use hopfile::*;
 
+use std::env::args;
+
 use yacexits::{
+	exit,
 	EX_OSERR,
 	EX_SOFTWARE,
+	EX_USAGE,
 };
 
 struct AppContext {
@@ -43,12 +45,26 @@ struct AppContext {
 	config: Config,
 }
 
-#[tokio::main]
-#[no_mangle]
-async fn rust_main(arguments: yacexits::Args) -> Result<u32, (String, u32)> {
-	let argv: Vec<&str> = arguments.into_iter().collect();
 
-	let args = Arguments::from_args(argv.clone().into_iter())
+fn main() {
+	let argv = args().collect::<Vec<String>>();
+	match rust_main(argv.clone()) {
+		Ok(code) => exit(code),
+		Err((message, code)) => {
+			if code == EX_USAGE {
+				eprintln!("Usage: {} {}", argv[0], message);
+			} else {
+				eprintln!("{}: {}", argv[0], message);
+			}
+			exit(code);
+		},
+	};
+}
+
+#[tokio::main]
+async fn rust_main(argv: Vec<String>) -> Result<u32, (String, u32)> {
+
+	let args = Arguments::from_args(argv.clone().iter().map(|s| s.as_str()))
 		.map_err(|err| { ArgsError::from(err) })?;
 
 	let config = Config::read_config()?;
